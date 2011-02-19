@@ -50,7 +50,7 @@ public class TestFloatFormat
         return Float.NaN;
     }
 
-    return r.nextFloat();
+    return Float.intBitsToFloat(r.nextInt());
   }
 
   /* Returns 1 if +0.0, 0 otherwise */
@@ -116,10 +116,6 @@ public class TestFloatFormat
       f = randFloat();
       g = randFloat();
 
-      /* Canonicalize NaNs */
-      f = Float.intBitsToFloat(Float.floatToIntBits(f));
-      g = Float.intBitsToFloat(Float.floatToIntBits(g));
-    
       format.encodeFloat(f, fBytes);
       format.encodeFloat(g, gBytes);
 

@@ -50,7 +50,7 @@ public class TestDoubleFormat
         return Double.NaN;
     }
 
-    return r.nextDouble();
+    return Double.longBitsToDouble(r.nextLong());
   }
 
   /* Returns 1 if +0.0, 0 otherwise */
@@ -116,10 +116,6 @@ public class TestDoubleFormat
       d = randDouble();
       e = randDouble();
 
-      /* Canonicalize NaNs */
-      d = Double.longBitsToDouble(Double.doubleToLongBits(d));
-      e = Double.longBitsToDouble(Double.doubleToLongBits(e));
-    
       format.encodeDouble(d, dBytes);
       format.encodeDouble(e, eBytes);
 
