@@ -15,8 +15,6 @@
 
 package com.gotometrics.hbase.format;
 
-import com.gotometrics.hbase.thrift.generated.Constants;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
