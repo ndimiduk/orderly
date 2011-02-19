@@ -13,9 +13,9 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.util;
+package com.gotometrics.hbase.util;
 
-import com.gotometrics.format.Order;
+import com.gotometrics.hbase.format.Order;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

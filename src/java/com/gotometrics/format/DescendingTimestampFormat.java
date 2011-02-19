@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
 import java.sql.Timestamp;
 
@@ -33,7 +33,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class DescendingTimestampFormat extends TimestampFormat 
 {
   /** This is a singleton class, instances may only be obtained by public static
-   * get() method calls or static methods in com.gotometrics.format.FormatUtils
+   * get() method calls or static methods in com.gotometrics.hbase.format.FormatUtils
    */
   protected DescendingTimestampFormat() { }
 

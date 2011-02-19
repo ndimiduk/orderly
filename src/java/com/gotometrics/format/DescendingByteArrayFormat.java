@@ -13,10 +13,10 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
-import com.gotometrics.util.ByteUtils;
-import com.gotometrics.util.NullUtils;
+import com.gotometrics.hbase.util.ByteUtils;
+import com.gotometrics.hbase.util.NullUtils;
 
 import java.util.Arrays;
 
@@ -27,7 +27,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class DescendingByteArrayFormat extends ByteArrayFormat 
 {
   /** This is a singleton class, instances may only be obtained by public static
-   * get() method calls or static methods in com.gotometrics.format.FormatUtils
+   * get() method calls or static methods in com.gotometrics.hbase.format.FormatUtils
    */
   protected DescendingByteArrayFormat() { }
 

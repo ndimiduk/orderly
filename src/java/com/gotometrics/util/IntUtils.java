@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.util;
+package com.gotometrics.hbase.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;

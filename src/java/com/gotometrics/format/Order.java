@@ -13,6 +13,6 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
 public enum Order { ASCENDING, DESCENDING };

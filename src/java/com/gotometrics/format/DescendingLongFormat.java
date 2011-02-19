@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -32,7 +32,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class DescendingLongFormat extends LongFormat 
 {
   /** This is a singleton class, instances may only be obtained by public static
-   * get() method calls or static methods in com.gotometrics.format.FormatUtils
+   * get() method calls or static methods in com.gotometrics.hbase.format.FormatUtils
    */
   protected DescendingLongFormat() { }
 

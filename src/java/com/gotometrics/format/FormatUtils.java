@@ -13,51 +13,18 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
-import com.gotometrics.thrift.generated.Constants;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FormatUtils
 {
-  private static final Map<Byte,DataFormat> toFormatFromId;
   private static final Map<String,DataFormat> toFormatFromName;
-  private static final Map<DataFormat, Byte> toId;
   private static final Map<DataFormat, String> toName;
 
   static {
-    Map<Byte,DataFormat> fmtId = 
-      new HashMap<Byte, DataFormat>(Constants.NUM_FORMATS);
-    fmtId.put(Constants.BYTEARRAY_FORMAT, ByteArrayFormat.get());
-    fmtId.put(Constants.BIGDECIMAL_FORMAT, BigDecimalFormat.get());
-    fmtId.put(Constants.DATE_FORMAT, DateFormat.get());
-    fmtId.put(Constants.DOUBLE_FORMAT, DoubleFormat.get());
-    fmtId.put(Constants.FLOAT_FORMAT, FloatFormat.get());
-    fmtId.put(Constants.INT_FORMAT, IntFormat.get());
-    fmtId.put(Constants.LONG_FORMAT, LongFormat.get());
-    fmtId.put(Constants.SHORT_FORMAT, ShortFormat.get());
-    fmtId.put(Constants.STRING_FORMAT, StringFormat.get());
-    fmtId.put(Constants.TIME_FORMAT, TimeFormat.get());
-    fmtId.put(Constants.TIMESTAMP_FORMAT, TimestampFormat.get());
-
-    fmtId.put(Constants.DESCENDING_BYTEARRAY_FORMAT, 
-        DescendingByteArrayFormat.get());
-    fmtId.put(Constants.DESCENDING_BIGDECIMAL_FORMAT, 
-        DescendingBigDecimalFormat.get());
-    fmtId.put(Constants.DESCENDING_DATE_FORMAT, DescendingDateFormat.get());
-    fmtId.put(Constants.DESCENDING_DOUBLE_FORMAT, DescendingDoubleFormat.get());
-    fmtId.put(Constants.DESCENDING_FLOAT_FORMAT, DescendingFloatFormat.get());
-    fmtId.put(Constants.DESCENDING_INT_FORMAT, DescendingIntFormat.get());
-    fmtId.put(Constants.DESCENDING_LONG_FORMAT, DescendingLongFormat.get());
-    fmtId.put(Constants.DESCENDING_SHORT_FORMAT, DescendingShortFormat.get());
-    fmtId.put(Constants.DESCENDING_STRING_FORMAT, DescendingStringFormat.get());
-    fmtId.put(Constants.DESCENDING_TIME_FORMAT, DescendingTimeFormat.get());
-    fmtId.put(Constants.DESCENDING_TIMESTAMP_FORMAT, 
-            DescendingTimestampFormat.get());
-    toFormatFromId = fmtId;
-
     Map<String,DataFormat> fmtName = 
       new HashMap<String, DataFormat>(Constants.NUM_FORMATS);
     fmtName.put("bytearray", ByteArrayFormat.get());
@@ -99,22 +66,6 @@ public class FormatUtils
     id.put(TimeFormat.get(), Constants.TIME_FORMAT);
     id.put(TimestampFormat.get(), Constants.TIMESTAMP_FORMAT);
 
-    id.put(DescendingByteArrayFormat.get(), 
-        Constants.DESCENDING_BYTEARRAY_FORMAT);
-    id.put(DescendingBigDecimalFormat.get(), 
-        Constants.DESCENDING_BIGDECIMAL_FORMAT);
-    id.put(DescendingDateFormat.get(), Constants.DESCENDING_DATE_FORMAT);
-    id.put(DescendingDoubleFormat.get(), Constants.DESCENDING_DOUBLE_FORMAT);
-    id.put(DescendingFloatFormat.get(), Constants.DESCENDING_FLOAT_FORMAT);
-    id.put(DescendingIntFormat.get(), Constants.DESCENDING_INT_FORMAT);
-    id.put(DescendingLongFormat.get(), Constants.DESCENDING_LONG_FORMAT);
-    id.put(DescendingShortFormat.get(), Constants.DESCENDING_SHORT_FORMAT);
-    id.put(DescendingStringFormat.get(), Constants.DESCENDING_STRING_FORMAT);
-    id.put(DescendingTimeFormat.get(), Constants.DESCENDING_TIME_FORMAT);
-    id.put(DescendingTimestampFormat.get(), 
-              Constants.DESCENDING_TIMESTAMP_FORMAT);
-    toId = id;
-
     Map<DataFormat, String> name = 
       new HashMap<DataFormat, String>(Constants.NUM_FORMATS);
 
@@ -144,16 +95,8 @@ public class FormatUtils
     toName = name;
   }
 
-  public static DataFormat getFormat(byte id) {
-    return toFormatFromId.get(id);
-  }
-
   public static DataFormat getFormat(String name) {
     return toFormatFromName.get(name);
-  }
-
-  public static byte getId(DataFormat format) {
-    return toId.get(format);
   }
 
   public static String getName(DataFormat format) {

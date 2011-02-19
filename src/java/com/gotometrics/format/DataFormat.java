@@ -13,9 +13,9 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
-import com.gotometrics.thrift.generated.Constants;
+import com.gotometrics.hbase.thrift.generated.Constants;
 
 import java.io.DataInput;
 import java.io.DataOutput;

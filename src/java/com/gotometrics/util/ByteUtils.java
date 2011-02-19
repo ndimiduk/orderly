@@ -13,11 +13,11 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.util;
+package com.gotometrics.hbase.util;
 
-import com.gotometrics.format.DataFormat;
-import com.gotometrics.format.DoubleFormat;
-import com.gotometrics.format.LongFormat;
+import com.gotometrics.hbase.format.DataFormat;
+import com.gotometrics.hbase.format.DoubleFormat;
+import com.gotometrics.hbase.format.LongFormat;
 
 import java.io.IOException;
 import java.util.Arrays;

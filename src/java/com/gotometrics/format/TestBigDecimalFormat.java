@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.format;
+package com.gotometrics.hbase.format;
 
 import java.io.FileWriter;
 import java.io.IOException;
