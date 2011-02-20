@@ -167,8 +167,8 @@ public class FloatFormat extends DataFormat
       return null;
     else 
       i--;
-    return Float.intBitsToFloat(i ^ ((~i >> Integer.SIZE -1 | 
-            Integer.MIN_VALUE)));
+    return Float.intBitsToFloat(i ^ ((~i >> Integer.SIZE -1) | 
+            Integer.MIN_VALUE));
   }
 
   @Override

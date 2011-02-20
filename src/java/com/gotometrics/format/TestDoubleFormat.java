@@ -25,8 +25,9 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class TestDoubleFormat
 {
   private static final int NUM_TESTS = 1024 * 1024;
-  private static DataFormat ascendingFormat = DoubleFormat.get(),
-                            descendingFormat = DescendingDoubleFormat.get();
+  private static DoubleFormat ascendingFormat = (DoubleFormat)DoubleFormat.get(),
+                            descendingFormat = 
+                              (DoubleFormat)DescendingDoubleFormat.get();
 
   private final Random r;
   private final int numTests;
@@ -36,7 +37,7 @@ public class TestDoubleFormat
     this.numTests = numTests;
   }
 
-  private double randDouble() {
+  private Double randDouble() {
     switch (r.nextInt(128)) {
       case 0:
         return +0.0d;
@@ -48,6 +49,8 @@ public class TestDoubleFormat
         return Double.NEGATIVE_INFINITY;
       case 4:
         return Double.NaN;
+      case 5:
+        return null;
     }
 
     return Double.longBitsToDouble(r.nextLong());
@@ -58,10 +61,9 @@ public class TestDoubleFormat
     return 1/d == Double.POSITIVE_INFINITY ? 1 : 0;
   }
 
-  private void verifyEncoding(DataFormat format, double d,
-      ImmutableBytesWritable dBytes) 
+  private void verifyDoubleEncoding(DoubleFormat format, double d,
+      double decoded)
   {
-    double decoded = format.decodeDouble(dBytes);
     if (!Double.isNaN(d) && d != 0.0d) {
       if (d != decoded)
         throw new RuntimeException("Double " + d + " decoded as " + decoded);
@@ -74,7 +76,22 @@ public class TestDoubleFormat
         throw new RuntimeException("Double " + d + " decoded as " + decoded);
   }
 
-  int doubleCompare(double d, double e) {
+  private void verifyEncoding(DoubleFormat format, Double d, 
+      ImmutableBytesWritable dBytes)
+  {
+    Double decoded = format.decodeNullableDouble(dBytes);
+    if (decoded != null && d != null) {
+      verifyDoubleEncoding(format, d.doubleValue(), decoded.doubleValue());
+      return;
+    }
+
+    if (decoded != null || d != null) 
+      throw new RuntimeException("Double " + d + " decoded as " + decoded);
+  }
+
+  int doubleCompare(Double d, Double e) {
+    if (d == null || e == null)
+      return ((d != null ? 1 : 0) - (e != null ? 1 : 0));
     if (!Double.isNaN(d) && !Double.isNaN(e) && !(d == 0 && e == 0)) 
       return ((d > e) ? 1 : 0) - ((e > d) ? 1 : 0);
 
@@ -89,8 +106,8 @@ public class TestDoubleFormat
     }
   }
 
-  private void verifySort(DataFormat format, double d,
-      ImmutableBytesWritable dBytes, double e, ImmutableBytesWritable eBytes)
+  private void verifySort(DoubleFormat format, Double d,
+      ImmutableBytesWritable dBytes, Double e, ImmutableBytesWritable eBytes)
   {
     int expectedOrder = doubleCompare(d, e);
     int byteOrder = Integer.signum(Bytes.compareTo(dBytes.get(), 
@@ -107,17 +124,17 @@ public class TestDoubleFormat
   }
                           
   public void test() {
-    double d, e;
+    Double d, e;
     ImmutableBytesWritable dBytes = new ImmutableBytesWritable(),
                            eBytes = new ImmutableBytesWritable();
 
     for (int i  = 0; i < numTests; i++) {
-      DataFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
+      DoubleFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
       d = randDouble();
       e = randDouble();
 
-      format.encodeDouble(d, dBytes);
-      format.encodeDouble(e, eBytes);
+      format.encodeNullableDouble(d, dBytes);
+      format.encodeNullableDouble(e, eBytes);
 
       verifyEncoding(format, d, dBytes);
       verifyEncoding(format, e, eBytes);

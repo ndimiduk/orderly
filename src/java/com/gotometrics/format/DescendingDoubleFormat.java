@@ -34,9 +34,28 @@ public class DescendingDoubleFormat extends DoubleFormat
     ibw.set(Bytes.toBytes(l ^ ((~l >> Long.SIZE - 1) & Long.MAX_VALUE)));
   }
 
+  public void encodeNullableDouble(final Double d,
+      final ImmutableBytesWritable ibw) 
+  {
+    long l = d == null ? -1 : Double.doubleToLongBits(d);
+    if (d != null)
+      l = (l ^ ((~l >> Long.SIZE - 1) & Long.MAX_VALUE)) - 1;
+    ibw.set(Bytes.toBytes(l));
+  }
+
   @Override
   public double decodeDouble(final ImmutableBytesWritable bytes) {
     long l = Bytes.toLong(bytes.get(), bytes.getOffset());
+    return Double.longBitsToDouble(l ^ ((~l >> Long.SIZE - 1) & 
+            Long.MAX_VALUE));
+  }
+
+  public Double decodeNullableDouble(final ImmutableBytesWritable bytes) {
+    long l =  Bytes.toLong(bytes.get(), bytes.getOffset());
+    if (l == -1) 
+      return null;
+    else 
+      l++;
     return Double.longBitsToDouble(l ^ ((~l >> Long.SIZE - 1) & 
             Long.MAX_VALUE));
   }

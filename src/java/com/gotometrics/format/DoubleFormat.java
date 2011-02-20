@@ -109,6 +109,16 @@ public class DoubleFormat extends DataFormat
     ibw.set(Bytes.toBytes(l ^ ((l >> Long.SIZE - 1) | Long.MIN_VALUE)));
   }
 
+  public void encodeNullableDouble(final Double d,
+      final ImmutableBytesWritable ibw) 
+  {
+    long l = d == null ? 0 : Double.doubleToLongBits(d);
+    if (d != null)
+      l = (l ^ ((l >> Long.SIZE - 1) | Long.MIN_VALUE)) + 1;
+    ibw.set(Bytes.toBytes(l));
+  }
+
+
   @Override
   public void encodeFloat(final float f, final ImmutableBytesWritable ibw) {
     encodeDouble(f, ibw);
@@ -144,6 +154,16 @@ public class DoubleFormat extends DataFormat
   @Override
   public double decodeDouble(final ImmutableBytesWritable bytes) {
     long l =  Bytes.toLong(bytes.get(), bytes.getOffset());
+    return Double.longBitsToDouble(l ^ ((~l >> Long.SIZE - 1) | 
+            Long.MIN_VALUE));
+  }
+
+  public Double decodeNullableDouble(final ImmutableBytesWritable bytes) {
+    long l =  Bytes.toLong(bytes.get(), bytes.getOffset());
+    if (l == 0) 
+      return null;
+    else 
+      l--;
     return Double.longBitsToDouble(l ^ ((~l >> Long.SIZE - 1) | 
             Long.MIN_VALUE));
   }
