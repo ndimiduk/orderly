@@ -34,11 +34,30 @@ public class DescendingFloatFormat extends FloatFormat
     ibw.set(Bytes.toBytes(i ^ ((~i >> Integer.SIZE - 1) & Integer.MAX_VALUE)));
   }
 
+  public void encodeNullableFloat(final Float f, 
+      final ImmutableBytesWritable ibw) 
+  {
+    int i = f == null ? -1 : Float.floatToIntBits(f.floatValue());
+    if (f != null)
+      i =  (i ^ ((~i >> Integer.SIZE - 1) & Integer.MAX_VALUE)) - 1;
+    ibw.set(Bytes.toBytes(i));
+  }
+
   @Override
   public float decodeFloat(final ImmutableBytesWritable bytes) {
     int i = Bytes.toInt(bytes.get(), bytes.getOffset());
     return Float.intBitsToFloat(i ^ ((~i >> Integer.SIZE - 1) & 
             Integer.MAX_VALUE));
+  }
+
+  public Float decodeNullableFloat(final ImmutableBytesWritable bytes) {
+    int i = Bytes.toInt(bytes.get(), bytes.getOffset());
+    if (i == -1) 
+      return null;
+    else 
+      i++;
+    return Float.intBitsToFloat(i ^ ((~i >> Integer.SIZE - 1) 
+          & Integer.MAX_VALUE));
   }
 
   private static final DataFormat format = new DescendingFloatFormat();

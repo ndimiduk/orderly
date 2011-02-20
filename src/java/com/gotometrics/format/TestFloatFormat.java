@@ -25,8 +25,9 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class TestFloatFormat
 {
   private static final int NUM_TESTS = 1024 * 1024;
-  private static DataFormat ascendingFormat = FloatFormat.get(),
-                            descendingFormat = DescendingFloatFormat.get();
+  private static FloatFormat ascendingFormat = (FloatFormat)FloatFormat.get(),
+                            descendingFormat = 
+                              (FloatFormat)DescendingFloatFormat.get();
 
   private final Random r;
   private final int numTests;
@@ -36,7 +37,7 @@ public class TestFloatFormat
     this.numTests = numTests;
   }
 
-  private float randFloat() {
+  private Float randFloat() {
     switch (r.nextInt(128)) {
       case 0:
         return +0.0f;
@@ -48,6 +49,8 @@ public class TestFloatFormat
         return Float.NEGATIVE_INFINITY;
       case 4:
         return Float.NaN;
+      case 5:
+        return null;
     }
 
     return Float.intBitsToFloat(r.nextInt());
@@ -58,10 +61,7 @@ public class TestFloatFormat
     return 1/f == Float.POSITIVE_INFINITY ? 1 : 0;
   }
 
-  private void verifyEncoding(DataFormat format, float f,
-      ImmutableBytesWritable fBytes) 
-  {
-    float decoded = format.decodeFloat(fBytes);
+  private void verifyFloatEncoding(FloatFormat format, float f, float decoded) {
     if (!Float.isNaN(f) && f != 0.0f) {
       if (f != decoded)
         throw new RuntimeException("Float " + f + " decoded as " + decoded);
@@ -74,7 +74,22 @@ public class TestFloatFormat
         throw new RuntimeException("Float " + f + " decoded as " + decoded);
   }
 
-  int floatCompare(float f, float g) {
+  private void verifyEncoding(FloatFormat format, Float f, 
+      ImmutableBytesWritable fBytes)
+  {
+    Float decoded = format.decodeNullableFloat(fBytes);
+    if (decoded != null && f != null) {
+      verifyFloatEncoding(format, f.floatValue(), decoded.floatValue());
+      return;
+    }
+
+    if (decoded != null || f != null) 
+      throw new RuntimeException("Float " + f + " decoded as " + decoded);
+  }
+      
+  int floatCompare(Float f, Float g) {
+    if (f == null || g == null)
+      return ((f != null ? 1 : 0) - (g != null ? 1 : 0));
     if (!Float.isNaN(f) && !Float.isNaN(g) && !(f == 0 && g == 0)) 
       return ((f > g) ? 1 : 0) - ((g > f) ? 1 : 0);
 
@@ -89,8 +104,8 @@ public class TestFloatFormat
     }
   }
 
-  private void verifySort(DataFormat format, float f, 
-      ImmutableBytesWritable fBytes, float g, ImmutableBytesWritable gBytes)
+  private void verifySort(FloatFormat format, Float f, 
+      ImmutableBytesWritable fBytes, Float g, ImmutableBytesWritable gBytes)
   {
     int expectedOrder = floatCompare(f, g);
     int byteOrder = Integer.signum(Bytes.compareTo(fBytes.get(), 
@@ -107,17 +122,17 @@ public class TestFloatFormat
   }
                           
   public void test() {
-    float f, g;
+    Float f, g;
     ImmutableBytesWritable fBytes = new ImmutableBytesWritable(),
                            gBytes = new ImmutableBytesWritable();
 
     for (int i  = 0; i < numTests; i++) {
-      DataFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
+      FloatFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
       f = randFloat();
       g = randFloat();
 
-      format.encodeFloat(f, fBytes);
-      format.encodeFloat(g, gBytes);
+      format.encodeNullableFloat(f, fBytes);
+      format.encodeNullableFloat(g, gBytes);
 
       verifyEncoding(format, f, fBytes);
       verifyEncoding(format, g, gBytes);
