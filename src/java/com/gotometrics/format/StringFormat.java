@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -50,14 +51,34 @@ public class StringFormat extends DataFormat
   @Override
   public Order getOrder() { return Order.ASCENDING; }
 
+  public byte getNull() { return (byte)0x00; }
+  public byte getTerminator() { return (byte)0x01; }
+
   @Override
   public int length(ImmutableBytesWritable bytes) { 
-    return NullUtils.length(getOrder(), bytes);
+    byte[] b = bytes.get();
+    int i = bytes.getOffset();
+
+    if (b[i] == getNull()) 
+      return 0;
+
+    while (b[i] != getTerminator()) i++;
+    return i - bytes.getOffset();
   }
 
   @Override
   public void encodeString(final String s, final ImmutableBytesWritable ibw) {
-    ibw.set(NullUtils.encode(getOrder(), Bytes.toBytes(s)));
+    if (s == null) {
+      ibw.set(new byte[] { getNull() });
+      return;
+    }
+
+    byte[] rawString = Bytes.toBytes(s),
+           b = Arrays.copyOf(rawString, rawString.length + 1);
+    for (int i = 0; i < b.length - 1; i++) 
+      b[i] += 2;
+    b[b.length - 1] = getTerminator();
+    ibw.set(b);
   }
 
   @Override
@@ -112,7 +133,17 @@ public class StringFormat extends DataFormat
   @Override
   public String decodeString(final ImmutableBytesWritable ibw) 
   {
-    return Bytes.toString(NullUtils.decode(getOrder(), ByteUtils.toBytes(ibw)));
+    byte[] a = ibw.get();
+    int offset = ibw.getOffset();
+
+    if (a[offset] == getNull())
+      return null;
+
+    int len = length(ibw);
+    byte[] b = new byte[len];
+    for (int i = 0; i < b.length; i++)
+      b[i] = (byte) (a[i + offset] - 2);
+    return Bytes.toString(b);
   }
 
   @Override

@@ -45,6 +45,9 @@ public class TestStringFormat
   }
 
   private String randString() {
+    if (r.nextInt(128) == 0)
+      return null;
+
     int len = r.nextInt(maxLen);
     StringBuilder sb = new StringBuilder(len);
 
@@ -57,16 +60,26 @@ public class TestStringFormat
       ImmutableBytesWritable sBytes) 
   {
     String decoded = format.decodeString(sBytes);
-    if (!Arrays.equals(Bytes.toBytes(s), Bytes.toBytes(decoded)))
+    if (s == null || decoded == null) {
+      if ((s != null) || (decoded != null)) 
+        throw new RuntimeException("String " + s + " decoded as " + decoded);
+    } else if (!Arrays.equals(Bytes.toBytes(s), Bytes.toBytes(decoded))) {
       throw new RuntimeException("String " + s + " decoded as " + decoded);
+    }
+  }
+
+  private int stringCompare(String s, String t) {
+    if (s == null || t == null)
+      return (s != null ? 1 : 0) - (t != null ? 1 : 0);
+    return Integer.signum(Bytes.compareTo(Bytes.toBytes(s), 
+          Bytes.toBytes(t)));
   }
 
   private void verifySort(DataFormat format, String s,
       ImmutableBytesWritable sBytes, String t, ImmutableBytesWritable tBytes)
   {
-    int expectedOrder = Integer.signum(Bytes.compareTo(Bytes.toBytes(s),
-          Bytes.toBytes(t)));
-    int byteOrder = Integer.signum(Bytes.compareTo(sBytes.get(), 
+    int expectedOrder = stringCompare(s, t),
+        byteOrder = Integer.signum(Bytes.compareTo(sBytes.get(), 
           sBytes.getOffset(), sBytes.getLength(), tBytes.get(), 
           tBytes.getOffset(), tBytes.getLength()));
 

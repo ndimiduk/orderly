@@ -18,6 +18,8 @@ package com.gotometrics.hbase.format;
 import com.gotometrics.hbase.util.ByteUtils;
 import com.gotometrics.hbase.util.NullUtils;
 
+import java.util.Arrays;
+
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -47,19 +49,37 @@ public class DescendingStringFormat extends StringFormat
   @Override
   public Order getOrder() { return Order.DESCENDING; }
 
+  public byte getNull() { return (byte)0xff; }
+  public byte getTerminator() { return (byte)0xfe; }
+
   @Override
   public void encodeString(final String s, final ImmutableBytesWritable ibw) {
-    byte[] b = Bytes.toBytes(s);
-    for (int i = 0; i < b.length; i++)
-      b[i] =  (byte) ~b[i];
-    ibw.set(NullUtils.encode(getOrder(), b));
+    if (s == null) {
+      ibw.set(new byte[] { getNull() });
+      return;
+    }
+
+    byte[] rawString = Bytes.toBytes(s),
+           b = Arrays.copyOf(rawString, rawString.length + 1);
+    for (int i = 0; i < b.length - 1; i++) 
+      b[i] = (byte) (~b[i] - 2);
+    b[b.length - 1] = getTerminator();
+    ibw.set(b);
   }
 
   @Override
-  public String decodeString(final ImmutableBytesWritable ibw) {
-    byte[] b = NullUtils.decode(getOrder(), ByteUtils.toBytes(ibw));
+  public String decodeString(final ImmutableBytesWritable ibw) 
+  {
+    byte[] a = ibw.get();
+    int offset = ibw.getOffset();
+
+    if (a[offset] == getNull())
+      return null;
+
+    int len = length(ibw);
+    byte[] b = new byte[len];
     for (int i = 0; i < b.length; i++)
-      b[i] = (byte) ~b[i];
+      b[i] = (byte) ~(a[i + offset] + 2);
     return Bytes.toString(b);
   }
 
