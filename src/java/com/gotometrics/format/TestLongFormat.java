@@ -25,8 +25,9 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class TestLongFormat
 {
   private static final int NUM_TESTS = 1024 * 1024;
-  private static DataFormat ascendingFormat = LongFormat.get(),
-                            descendingFormat = DescendingLongFormat.get();
+  private static LongFormat ascendingFormat = (LongFormat)LongFormat.get(),
+                            descendingFormat = 
+                              (LongFormat)DescendingLongFormat.get();
 
   private final Random r;
   private final int numTests;
@@ -36,7 +37,10 @@ public class TestLongFormat
     this.numTests = numTests;
   }
 
-  private long randLong() {
+  private Long randLong() {
+    if (r.nextInt(128) == 0)
+      return null;
+
     long l = r.nextLong();
 
     switch (r.nextInt(4)) {
@@ -59,20 +63,36 @@ public class TestLongFormat
          
   }
 
-  private void verifyEncoding(DataFormat format, long x, 
-      ImmutableBytesWritable xBytes) 
-  {
-    long decoded = format.decodeLong(xBytes);
+  private void verifyLongEncoding(LongFormat format, long x, long decoded) {
     if (x != decoded)
       throw new RuntimeException("Long 0x" + Long.toHexString(x) + 
           " decoded as 0x" + Long.toHexString(decoded));
   }
 
-  private void verifySort(DataFormat format, long x, 
-      ImmutableBytesWritable xBytes, long y, ImmutableBytesWritable yBytes)
+  private void verifyEncoding(LongFormat format, Long x, 
+      ImmutableBytesWritable xBytes) 
   {
-    long expectedOrder = ((x > y) ? 1 : 0)  - ((x < y) ? 1 : 0);
-    long byteOrder = Integer.signum(Bytes.compareTo(xBytes.get(), 
+    Long decoded = format.decodeNullableLong(xBytes);
+    if (x != null && decoded != null) {
+      verifyLongEncoding(format, x, decoded);
+      return;
+    }
+
+    if (x != null || decoded != null)
+      throw new RuntimeException("Long " + x + " decoded as " + decoded);
+  }
+
+  private int longCompare(Long x, Long y) {
+    if (x == null || y == null)
+      return (x != null ? 1 : 0) - (y != null ? 1 : 0);
+    return ((x > y) ? 1 : 0)  - ((x < y) ? 1 : 0);
+  }
+
+  private void verifySort(LongFormat format, Long x, 
+      ImmutableBytesWritable xBytes, Long y, ImmutableBytesWritable yBytes)
+  {
+    int expectedOrder = longCompare(x, y),
+        byteOrder = Integer.signum(Bytes.compareTo(xBytes.get(), 
           xBytes.getOffset(), xBytes.getLength(), yBytes.get(), 
           yBytes.getOffset(), yBytes.getLength()));
 
@@ -86,17 +106,17 @@ public class TestLongFormat
   }
                           
   public void test() {
-    long x, y;
+    Long x, y;
     ImmutableBytesWritable xBytes = new ImmutableBytesWritable(),
                            yBytes = new ImmutableBytesWritable();
 
     for (int i  = 0; i < numTests; i++) {
-      DataFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
+      LongFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
       x = randLong();
       y = randLong();
     
-      format.encodeLong(x, xBytes);
-      format.encodeLong(y, yBytes);
+      format.encodeNullableLong(x, xBytes);
+      format.encodeNullableLong(y, yBytes);
 
       verifyEncoding(format, x, xBytes);
       verifyEncoding(format, y, yBytes);

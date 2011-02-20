@@ -15,6 +15,8 @@
 
 package com.gotometrics.hbase.util;
 
+import com.gotometrics.hbase.format.Order;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -107,6 +109,12 @@ import java.io.IOException;
  * 
  * Any trailing bits that are unused are padded with the sign bit. The worst 
  * case overhead versus a standard fixed-length encoding is 1 additional byte.
+ *
+ * Header values 0x00 and 0xff can never occur in a valid integer encoding. We 
+ * reserve these values to represent NULL in a sort order-preserving single byte
+ * encoding for ascending and descending sort orders, respectively. Note that
+ * if reserved bits are present, these header values will be shifted right
+ * appropriately by the number of reserved bits.
  */
 public class IntUtils
 {
@@ -132,6 +140,12 @@ public class IntUtils
 
   /* Bit offset of the length field in the header byte */
   private static final int HEADER_LEN_OFF = 0x2; 
+
+  /* NULL - ascending sort */
+  private static final byte HEADER_NULL_ASC = (byte)0x00;
+
+  /* NULL - descending sort */
+  private static final byte HEADER_NULL_DSC = (byte)0xff;
 
   /** Read a byte from x.  Any out of bounds bits (those whose bit position is
    * at offset &ge; 63) will be set to the sign bit.
@@ -170,8 +184,16 @@ public class IntUtils
 
   /** Encode a variable length long into a given byte array */
   public static void writeVarLong(final byte reservedBits, 
-      final long x, final byte[] b, final int offset)
+      final Long x, final byte[] b, final int offset, Order order)
   {
+    if (x == null) {
+      if (order.equals(Order.ASCENDING))
+        b[offset] = (byte) (HEADER_NULL_ASC >>> reservedBits);
+      else
+        b[offset] = (byte) (HEADER_NULL_DSC >>> reservedBits);
+      return;
+    }
+
     long negSign = ~x >> Long.SIZE - 1;
     int numBytes = getVarLongLength(reservedBits, x),
         headerBits = getNumHeaderDataBits(numBytes) - reservedBits,
@@ -191,14 +213,28 @@ public class IntUtils
   }
 
   /** Encode a variable length long into a given byte array */
-  public static void writeVarLong(final long x, final byte[] b, 
+  public static void writeVarLong(final byte reservedBits, 
+      final Long x, final byte[] b, final int offset)
+  {
+    writeVarLong(reservedBits, x, b, offset, Order.ASCENDING);
+  }
+
+  /** Encode a variable length long into a given byte array */
+  public static void writeVarLong(final Long x, final byte[] b, 
       final int offset)
   {
-    writeVarLong((byte)0, x, b, offset);
+    writeVarLong(x, b, offset, Order.ASCENDING);
+  }
+
+  /** Encode a variable length long into a given byte array */
+  public static void writeVarLong(final Long x, final byte[] b, 
+      final int offset, Order order)
+  {
+    writeVarLong((byte)0, x, b, offset, order);
   }
 
   /** Encode a variable length long into the given DataOutput */
-  public static void writeVarLong(final byte reservedBits, final long x, 
+  public static void writeVarLong(final byte reservedBits, final Long x, 
       final DataOutput out) throws IOException
   {
     byte[] b = new byte[getVarLongLength(reservedBits, x)];
@@ -207,7 +243,7 @@ public class IntUtils
   }
 
   /** Encode a variable length long into the given DataOutput */
-  public static void writeVarLong(final long x, final DataOutput out) 
+  public static void writeVarLong(final Long x, final DataOutput out) 
     throws IOException
   {
     writeVarLong((byte)0, x, out);
@@ -217,7 +253,7 @@ public class IntUtils
   public static void writeVarInt(final byte reservedBits, final int x, 
       final byte[] b, final int offset) 
   {
-    writeVarLong(reservedBits, x, b, offset);
+    writeVarLong(reservedBits, Long.valueOf(x), b, offset);
   }
 
   /** Encode a variable length integer into a given byte array */
@@ -230,7 +266,7 @@ public class IntUtils
   public static void writeVarInt(final byte reservedBits, final int x, 
       final DataOutput out) throws IOException
   {
-    writeVarLong(reservedBits, x, out);
+    writeVarLong(reservedBits, Long.valueOf(x), out);
   }
 
   /** Encode a variable length integer into the given DataOutput */
@@ -240,12 +276,20 @@ public class IntUtils
     writeVarInt((byte)0, x, out);
   }
 
+  public static boolean isNull(byte h, Order order, int reservedBits) {
+    h = (byte) ((h << reservedBits) >> reservedBits);
+    return (order.equals(Order.ASCENDING) && h == HEADER_NULL_ASC)
+        || (order.equals(Order.DESCENDING) && h == HEADER_NULL_DSC);
+  }
+
   /** Decode the length of a variable-length long from its header byte */
-  public static int decodeVarLongLength(final byte reservedBits, final byte h) {
+  public static int decodeVarLongLength(final byte reservedBits, final byte h,
+      Order order)
+  {
     byte b = (byte) (h << reservedBits),
          negSign = (byte) (b >> Byte.SIZE - 1);
 
-    if (((b ^ negSign) & HEADER_SINGLE) != 0) 
+    if (isNull(h, order, reservedBits) || ((b ^ negSign) & HEADER_SINGLE) != 0)
       return 1;
     else if (((b ^ negSign) & HEADER_DOUBLE) != 0)
       return 2;
@@ -254,9 +298,17 @@ public class IntUtils
     return len + HEADER_LEN_BIAS;
   }
 
+  public static int decodeVarLongLength(final byte reservedBits, final byte h) {
+    return decodeVarLongLength(reservedBits, h, Order.ASCENDING);
+  }
+
   /** Decode the length of a variable-length long from its header byte */
+  public static int decodeVarLongLength(final byte b, Order order) {
+    return decodeVarLongLength((byte)0, b, order);
+  }
+
   public static int decodeVarLongLength(final byte b) {
-    return decodeVarLongLength((byte)0, b);
+    return decodeVarLongLength(b, Order.ASCENDING);
   }
 
   /** Decode the length of a variable-length integer from its header byte */
@@ -288,7 +340,10 @@ public class IntUtils
   /** Return the number of bytes necessary to encode a long using 
    * variable-length long encoding.
    */
-  public static int getVarLongLength(final byte reservedBits, final long x) {
+  public static int getVarLongLength(final byte reservedBits, final Long x) {
+    if (x == null)
+      return 1;
+
     int numBits = bitSize(x) + reservedBits;
 
     /* Check to see if x can fit into the number of data bits in a single or
@@ -321,7 +376,7 @@ public class IntUtils
   /** Return the number of bytes necessary to encode a long using 
    * variable-length long encoding.
    */
-  public static int getVarLongLength(final long x) {
+  public static int getVarLongLength(final Long x) {
     return getVarLongLength((byte)0, x);
   }
 
@@ -329,14 +384,14 @@ public class IntUtils
    * variable-length integer encoding.
    */
   public static int getVarIntLength(final byte reservedBits, final int x) {
-    return getVarLongLength(reservedBits, x);
+    return getVarLongLength(reservedBits, Long.valueOf(x));
   }
 
   /** Return the number of bytes necessary to encode an int using 
    * variable-length integer encoding.
    */
   public static int getVarIntLength(final int x) {
-    return getVarLongLength((byte)0, x);
+    return getVarLongLength((byte)0, Long.valueOf(x));
   }
 
   /** Write byte b to long x. Any bits that will be written out of bounds
@@ -359,9 +414,12 @@ public class IntUtils
   }
 
   /** Decode a variable-length long from a byte array */
-  public static long readVarLong(final byte reservedBits, final byte[] b, 
-      final int offset) 
+  public static Long readVarLong(final byte reservedBits, final byte[] b, 
+      final int offset, Order order) 
   {
+    if (isNull(b[offset], order, reservedBits))
+      return null;
+
     int numBytes = decodeVarLongLength(reservedBits, b[offset]),
         headerBits = getNumHeaderDataBits(numBytes) - reservedBits,
         numBits = headerBits + 8 * (numBytes - 1);
@@ -380,13 +438,25 @@ public class IntUtils
     return x;
   }
 
+  public static Long readVarLong(final byte reservedBits, final byte[] b, 
+      final int offset)
+  {
+    return readVarLong(reservedBits, b, offset, Order.ASCENDING);
+  }
+  
   /** Decode a variable-length long from a byte array */
-  public static long readVarLong(final byte[] b, final int offset) {
-    return readVarLong((byte)0, b, offset);
+  public static Long readVarLong(final byte[] b, final int offset) {
+    return readVarLong(b, offset, Order.ASCENDING);
+  }
+
+  /** Decode a variable-length long from a byte array */
+  public static Long readVarLong(final byte[] b, final int offset, Order order)
+  {
+    return readVarLong((byte)0, b, offset, order);
   }
 
   /** Decode a variable-length long from a DataInput object */
-  public static long readVarLong(final byte reservedBits, final DataInput in) 
+  public static Long readVarLong(final byte reservedBits, final DataInput in) 
     throws IOException 
   {
     byte header = in.readByte();
@@ -398,7 +468,7 @@ public class IntUtils
   }
 
   /** Decode a variable-length long from a DataInput object */
-  public static long readVarLong(final DataInput in) throws IOException 
+  public static Long readVarLong(final DataInput in) throws IOException 
   {
     return readVarLong((byte)0, in);
   }
@@ -407,23 +477,23 @@ public class IntUtils
   public static int readVarInt(final byte reservedBits, final byte[] b, 
       final int offset) 
   {
-    return (int) readVarLong(reservedBits, b, offset);
+    return (int) readVarLong(reservedBits, b, offset).longValue();
   }
 
   /** Decode a variable-length integer from a byte array */
   public static int readVarInt(final byte[] b, final int offset) {
-    return (int) readVarLong((byte)0, b, offset);
+    return (int) readVarLong((byte)0, b, offset).longValue();
   }
 
   /** Decode a variable-length integer from a DataInput object */
   public static int readVarInt(final byte reservedBits, final DataInput in) 
     throws IOException 
   {
-    return (int) readVarLong(reservedBits, in);
+    return (int) readVarLong(reservedBits, in).longValue();
   }
 
   /** Decode a variable-length integer from a DataInput object */
   public static int readVarInt(final DataInput in) throws IOException {
-    return (int) readVarLong((byte)0, in);
+    return (int) readVarLong((byte)0, in).longValue();
   }
 }

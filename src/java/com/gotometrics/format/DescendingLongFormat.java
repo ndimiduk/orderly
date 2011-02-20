@@ -44,9 +44,21 @@ public class DescendingLongFormat extends LongFormat
     super.encodeLong(~l, ibw);
   }
 
+  public void encodeNullableLong(final Long l, final ImmutableBytesWritable ibw)
+  {
+    super.encodeNullableLong(l != null ? new Long(~l.longValue()) : l, ibw);
+  }
+
   @Override
   public long decodeLong(final ImmutableBytesWritable bytes) {
     return ~super.decodeLong(bytes);
+  }
+
+  public Long decodeNullableLong(final ImmutableBytesWritable bytes) {
+    Long l = super.decodeNullableLong(bytes);
+    if (l != null)
+      l = new Long(~l.longValue());
+    return l;
   }
 
   private static final DataFormat format = new DescendingLongFormat();
