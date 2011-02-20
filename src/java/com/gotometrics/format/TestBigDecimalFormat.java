@@ -77,10 +77,9 @@ public class TestBigDecimalFormat
     return scale;
   }
 
-  private void verifyEncoding(DataFormat format, BigDecimal d,
-      ImmutableBytesWritable dBytes) 
+  private void verifyBigDecimalEncoding(DataFormat format, BigDecimal d,
+      BigDecimal decoded)
   {
-    BigDecimal decoded = format.decodeBigDecimal(dBytes);
     d = d.stripTrailingZeros();
     if (d.unscaledValue().equals(BigInteger.ZERO))
       d = BigDecimal.ZERO;
@@ -89,12 +88,32 @@ public class TestBigDecimalFormat
             " BigDecimal " + d + " decoded as " + decoded);
   }
 
+  private void verifyEncoding(DataFormat format, BigDecimal d,
+      ImmutableBytesWritable dBytes) 
+  {
+    BigDecimal decoded = format.decodeBigDecimal(dBytes);
+    if (d != null && decoded != null) {
+      verifyBigDecimalEncoding(format, d, decoded);
+      return;
+    }
+
+    if (d != null || decoded != null)
+      throw new RuntimeException("BigDecimal " + d + " decoded as " + decoded);
+  }
+
+  private int bigdecimalCompare(BigDecimal d, BigDecimal e) {
+    if (d == null || e == null)
+      return (d != null ? 1 : 0) - (e != null ? 1 : 0);
+    return d.compareTo(e);
+  }
+
+
   private void verifySort(DataFormat format, BigDecimal d,
       ImmutableBytesWritable dBytes, BigDecimal e, 
       ImmutableBytesWritable eBytes)
   {
-    int expectedOrder = d.compareTo(e);
-    int byteOrder = Integer.signum(Bytes.compareTo(dBytes.get(), 
+    int expectedOrder = bigdecimalCompare(d, e),
+        byteOrder = Integer.signum(Bytes.compareTo(dBytes.get(), 
           dBytes.getOffset(), dBytes.getLength(), eBytes.get(), 
           eBytes.getOffset(), eBytes.getLength()));
 
@@ -125,6 +144,11 @@ public class TestBigDecimalFormat
           es = randScale(ei.bitCount());
       BigDecimal d = new BigDecimal(di, ds),
                  e = new BigDecimal(ei, es);
+
+      if (r.nextInt(128) == 0)
+        d = null;
+      if (r.nextInt(128) == 0)
+        e = null;
 
       format.encodeBigDecimal(d, dBytes);
       format.encodeBigDecimal(e, eBytes);

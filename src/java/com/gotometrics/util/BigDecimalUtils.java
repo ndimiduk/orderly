@@ -242,8 +242,16 @@ public class BigDecimalUtils
 
   /** Convert a BigDecimal into a sequence of bytes, preserving sort order */
   public static byte[] toBytes(Order ord, BigDecimal d) {
-    d = d.stripTrailingZeros();
+    byte[] b;
 
+    if (d == null) {
+      b = new byte[1];
+      IntUtils.writeVarLong(RESERVED_BITS, null, b, 0, ord);
+      b[0] = (byte) ((b[0] << RESERVED_BITS) >> RESERVED_BITS);
+      return b;
+    }
+
+    d = d.stripTrailingZeros();
     BigInteger i = d.unscaledValue();
     /* Bit trick - i.signum() >>Integer.SIZE-1 is -1 if i < 0, 0 if i >= 0 */
     byte order = (byte) (getSign(ord) ^ (i.signum() >> (Integer.SIZE - 1))),
@@ -263,7 +271,7 @@ public class BigDecimalUtils
          exp = precision + scale -1L;
     int expLen = IntUtils.getVarLongLength(RESERVED_BITS, exp ^ order);
 
-    byte[] b = new byte[expLen + getBCDEncodedLength(s)];
+    b = new byte[expLen + getBCDEncodedLength(s)];
     IntUtils.writeVarLong(RESERVED_BITS, exp ^ order, b, 0);
     b[0] |= header;
     toBCD(order, s, b, expLen);
@@ -291,8 +299,10 @@ public class BigDecimalUtils
   /** Convert an encoded sequence of bytes into a BigDecimal object */
   public static BigDecimal toBigDecimal(Order ord, byte[] b, int offset) {
     byte order = (byte) (~b[offset] >> Byte.SIZE - 1);
-    
-    if (((b[offset] ^ ~order) & HEADER_SIGNIFICAND_ZERO) != 0)
+
+    if (IntUtils.isNull(b[offset], ord, RESERVED_BITS))
+      return null;
+    else if (((b[offset] ^ ~order) & HEADER_SIGNIFICAND_ZERO) != 0)
       return BigDecimal.ZERO;
 
     long exp = IntUtils.readVarLong(RESERVED_BITS, b, offset) ^ order;
