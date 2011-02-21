@@ -60,7 +60,6 @@ public class TestLongFormat
     }
 
     return l;
-         
   }
 
   private void verifyLongEncoding(LongFormat format, long x, long decoded) {
@@ -70,9 +69,10 @@ public class TestLongFormat
   }
 
   private void verifyEncoding(LongFormat format, Long x, 
-      ImmutableBytesWritable xBytes) 
+      ImmutableBytesWritable xBytes, boolean isSigned) 
   {
-    Long decoded = format.decodeNullableLong(xBytes);
+    Long decoded = isSigned ? format.decodeNullableLong(xBytes) :
+      format.decodeNullableUnsignedLong(xBytes);
     if (x != null && decoded != null) {
       verifyLongEncoding(format, x, decoded);
       return;
@@ -82,16 +82,24 @@ public class TestLongFormat
       throw new RuntimeException("Long " + x + " decoded as " + decoded);
   }
 
-  private int longCompare(Long x, Long y) {
+  private int longCompare(Long x, Long y, boolean isSigned) {
     if (x == null || y == null)
       return (x != null ? 1 : 0) - (y != null ? 1 : 0);
+
+    /* convert unsigned comparison to signed */
+    if (!isSigned) {
+      x = new Long(x ^ Long.MIN_VALUE);
+      y = new Long(y ^ Long.MIN_VALUE);
+    }
+
     return ((x > y) ? 1 : 0)  - ((x < y) ? 1 : 0);
   }
 
   private void verifySort(LongFormat format, Long x, 
-      ImmutableBytesWritable xBytes, Long y, ImmutableBytesWritable yBytes)
+      ImmutableBytesWritable xBytes, Long y, ImmutableBytesWritable yBytes,
+      boolean isSigned)
   {
-    int expectedOrder = longCompare(x, y),
+    int expectedOrder = longCompare(x, y, isSigned),
         byteOrder = Integer.signum(Bytes.compareTo(xBytes.get(), 
           xBytes.getOffset(), xBytes.getLength(), yBytes.get(), 
           yBytes.getOffset(), yBytes.getLength()));
@@ -102,7 +110,7 @@ public class TestLongFormat
     if (expectedOrder != byteOrder)
       throw new RuntimeException("Comparing " + x + " to "
           + y + " expected signum " + expectedOrder +
-          " got signum " + byteOrder);
+          " got signum " + byteOrder + " isSigned " + isSigned);
   }
                           
   public void test() {
@@ -114,14 +122,20 @@ public class TestLongFormat
       LongFormat format = r.nextBoolean() ? ascendingFormat : descendingFormat;
       x = randLong();
       y = randLong();
-    
-      format.encodeNullableLong(x, xBytes);
-      format.encodeNullableLong(y, yBytes);
 
-      verifyEncoding(format, x, xBytes);
-      verifyEncoding(format, y, yBytes);
+      boolean isSigned = r.nextBoolean(); 
+      if (isSigned) {
+        format.encodeNullableLong(x, xBytes);
+        format.encodeNullableLong(y, yBytes);
+      } else {
+        format.encodeNullableUnsignedLong(x, xBytes);
+        format.encodeNullableUnsignedLong(y, yBytes);
+      }
 
-      verifySort(format, x, xBytes, y, yBytes);
+      verifyEncoding(format, x, xBytes, isSigned);
+      verifyEncoding(format, y, yBytes, isSigned);
+
+      verifySort(format, x, xBytes, y, yBytes, isSigned);
     }
   }
 

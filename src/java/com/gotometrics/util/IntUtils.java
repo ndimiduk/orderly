@@ -141,33 +141,56 @@ public class IntUtils
   /* Bit offset of the length field in the header byte */
   private static final int HEADER_LEN_OFF = 0x2; 
 
+  /* Unsigned values omit the leading sign bit */
+  private static final int HEADER_UNSIGNED_SHIFT = 0x1;
+
+
   /* NULL - ascending sort */
   private static final byte HEADER_NULL_ASC = (byte)0x00;
 
   /* NULL - descending sort */
   private static final byte HEADER_NULL_DSC = (byte)0xff;
 
+  private static int getHeaderDataBits(int base, boolean isSigned) {
+    return base + (isSigned ? 0 : HEADER_UNSIGNED_SHIFT);
+  }
+
+  private static int getHeaderSingleDataBits(boolean isSigned) {
+    return getHeaderDataBits(HEADER_SINGLE_DATA_BITS, isSigned);
+  }
+
+  private static int getHeaderDoubleDataBits(boolean isSigned) {
+    return getHeaderDataBits(HEADER_DOUBLE_DATA_BITS, isSigned);
+  }
+
+  private static int getHeaderMultiDataBits(boolean isSigned) {
+    return getHeaderDataBits(HEADER_MULTI_DATA_BITS, isSigned);
+  }
+
   /** Read a byte from x.  Any out of bounds bits (those whose bit position is
    * at offset &ge; 63) will be set to the sign bit.
    */
-  private static byte readByte(final long x, final int offset, final int mask) {
-    if (offset >= Long.SIZE - 1)
-      return (byte) ((x >> Long.SIZE - 1) & mask);
-
-    return (byte) ((x >> offset) & mask);
+  private static byte readByte(final long x, final int offset, final int mask,
+      boolean isSigned)
+  {
+    if (offset >= Long.SIZE - 1) 
+      return isSigned ? (byte) ((x >> Long.SIZE - 1) & mask) : (byte) 0;
+    return (byte) ((isSigned ? x >> offset : x >>> offset) & mask);
   }
 
   /** Return the number of data bits in the header.  */
-  private static int getNumHeaderDataBits(int numBytes) {
+  private static int getNumHeaderDataBits(int numBytes, boolean isSigned) {
     if (numBytes == 1)
-      return HEADER_SINGLE_DATA_BITS;
+      return getHeaderSingleDataBits(isSigned);
     else if (numBytes == 2)
-      return HEADER_DOUBLE_DATA_BITS;
-    return HEADER_MULTI_DATA_BITS;
+      return getHeaderDoubleDataBits(isSigned);
+    return getHeaderMultiDataBits(isSigned);
   }
 
   /** Returns an initialized header byte with all data bits clear.  */
-  private static byte getHeader(byte reservedBits, long negSign, int numBytes) {
+  private static byte getHeader(byte reservedBits, long negSign, int numBytes,
+      boolean isSigned)
+  {
     long b = negSign & HEADER_SIGN;
     if (numBytes == 1) {
       b |= (~negSign & HEADER_SINGLE);
@@ -179,12 +202,16 @@ public class IntUtils
       b |= (negSign & (HEADER_SINGLE|HEADER_DOUBLE)) | encodedLength;
     }
 
+    if (!isSigned) 
+      b <<= 1;
+
     return (byte) (b >>> reservedBits);
   }
 
   /** Encode a variable length long into a given byte array */
   public static void writeVarLong(final byte reservedBits, 
-      final Long x, final byte[] b, final int offset, Order order)
+      final Long x, final byte[] b, final int offset, Order order, 
+      boolean isSigned)
   {
     if (x == null) {
       if (order.equals(Order.ASCENDING))
@@ -194,22 +221,31 @@ public class IntUtils
       return;
     }
 
-    long negSign = ~x >> Long.SIZE - 1;
-    int numBytes = getVarLongLength(reservedBits, x),
-        headerBits = getNumHeaderDataBits(numBytes) - reservedBits,
+    long negSign = isSigned ? ~x >> Long.SIZE - 1 : -1;
+    int numBytes = getVarLongLength(reservedBits, x, isSigned),
+        headerBits = getNumHeaderDataBits(numBytes, isSigned) - reservedBits,
         numBits = headerBits + 8 * (numBytes - 1);
 
-    if (reservedBits > HEADER_MULTI_DATA_BITS)
+    if (reservedBits > getHeaderMultiDataBits(isSigned))
       throw new IllegalArgumentException("Cannot reserve more than " +
-          HEADER_MULTI_DATA_BITS + " bits");
+          getHeaderMultiDataBits(isSigned)  + " bits");
 
     /* Encode the header and any header data bits */
-    b[offset] = getHeader(reservedBits, negSign, numBytes);
-    b[offset] |= readByte(x, numBits -= headerBits, (1 << headerBits) - 1);
+    b[offset] = getHeader(reservedBits, negSign, numBytes, isSigned);
+    b[offset] |= readByte(x, numBits -= headerBits, (1 << headerBits) - 1,
+        isSigned);
+    if (!isSigned) 
+      b[offset]++;
 
     /* Now encode numBytes - 1 data bytes */
     for (int i = 1; i < numBytes; i++)  
-      b[offset + i] = readByte(x, numBits -= 8, 0xff); 
+      b[offset + i] = readByte(x, numBits -= 8, 0xff, isSigned); 
+  }
+
+  public static void writeVarLong(final byte reservedBits, 
+      final Long x, final byte[] b, final int offset, Order order) 
+  {
+    writeVarLong(reservedBits, x, b, offset, order, true);
   }
 
   /** Encode a variable length long into a given byte array */
@@ -226,11 +262,23 @@ public class IntUtils
     writeVarLong(x, b, offset, Order.ASCENDING);
   }
 
+  public static void writeVarLong(final Long x, final byte[] b, 
+      final int offset, boolean isSigned)
+  {
+    writeVarLong(x, b, offset, Order.ASCENDING, isSigned);
+  }
+
   /** Encode a variable length long into a given byte array */
   public static void writeVarLong(final Long x, final byte[] b, 
       final int offset, Order order)
   {
     writeVarLong((byte)0, x, b, offset, order);
+  }
+
+  public static void writeVarLong(final Long x, final byte[] b, 
+      final int offset, Order order, boolean isSigned)
+  {
+    writeVarLong((byte)0, x, b, offset, order, isSigned);
   }
 
   /** Encode a variable length long into the given DataOutput */
@@ -284,10 +332,15 @@ public class IntUtils
 
   /** Decode the length of a variable-length long from its header byte */
   public static int decodeVarLongLength(final byte reservedBits, final byte h,
-      Order order)
+      Order order, boolean isSigned)
   {
     byte b = (byte) (h << reservedBits),
-         negSign = (byte) (b >> Byte.SIZE - 1);
+         negSign = isSigned ? (byte) (b >> Byte.SIZE - 1) : (byte) -1;
+
+    if (!isSigned) {
+      b--;
+      b >>>= 1;
+    }
 
     if (isNull(h, order, reservedBits) || ((b ^ negSign) & HEADER_SINGLE) != 0)
       return 1;
@@ -299,16 +352,29 @@ public class IntUtils
   }
 
   public static int decodeVarLongLength(final byte reservedBits, final byte h) {
-    return decodeVarLongLength(reservedBits, h, Order.ASCENDING);
+    return decodeVarLongLength(reservedBits, h, Order.ASCENDING, true);
+  }
+
+  public static int decodeVarLongLength(final byte reservedBits, final byte h,
+      boolean isSigned)
+  {
+    return decodeVarLongLength(reservedBits, h, Order.ASCENDING, isSigned);
   }
 
   /** Decode the length of a variable-length long from its header byte */
   public static int decodeVarLongLength(final byte b, Order order) {
-    return decodeVarLongLength((byte)0, b, order);
+    return decodeVarLongLength((byte)0, b, order, true);
+  }
+
+  /** Decode the length of a variable-length long from its header byte */
+  public static int decodeVarLongLength(final byte b, Order order,
+      boolean isSigned) 
+  {
+    return decodeVarLongLength((byte)0, b, order, isSigned);
   }
 
   public static int decodeVarLongLength(final byte b) {
-    return decodeVarLongLength(b, Order.ASCENDING);
+    return decodeVarLongLength(b, Order.ASCENDING, true);
   }
 
   /** Decode the length of a variable-length integer from its header byte */
@@ -332,28 +398,31 @@ public class IntUtils
    * Reference: Hacker's Delight, 5.3 "Relation to the Log Function", 
    *            bitsize(x)
    */
-  private static int bitSize(final long x) {
-    long diffBits = x ^ (x >> Long.SIZE - 1);
+  private static int bitSize(final long x, boolean isSigned) {
+    long diffBits = isSigned ? x ^ (x >> Long.SIZE - 1) : x;
     return Long.SIZE - Long.numberOfLeadingZeros(diffBits);
   }
 
   /** Return the number of bytes necessary to encode a long using 
    * variable-length long encoding.
    */
-  public static int getVarLongLength(final byte reservedBits, final Long x) {
+  public static int getVarLongLength(final byte reservedBits, final Long x,
+      boolean isSigned)
+  {
     if (x == null)
       return 1;
 
-    int numBits = bitSize(x) + reservedBits;
+    int numBits = bitSize(x, isSigned) + reservedBits;
+    
 
     /* Check to see if x can fit into the number of data bits in a single or
      * double byte encoding. We test against HEADER_DOUBLE_DATA_BITS + 8 because
      * a double byte encoding has data bits in its header and a trailing 8-bit
      * data byte.
      */
-    if (numBits <= HEADER_SINGLE_DATA_BITS)
+    if (numBits <= getHeaderSingleDataBits(isSigned))
       return 1;
-    else if (numBits <= HEADER_DOUBLE_DATA_BITS + 8)
+    else if (numBits <= getHeaderDoubleDataBits(isSigned) + 8)
       return 2;
 
     /* Otherwise, x will require a multi (3-9) byte encoding. At this point we 
@@ -370,14 +439,22 @@ public class IntUtils
      * because the subsequent logical right shift will remove the least 
      * significant 3 bits anyway.
      */
-    return 1 + ((numBits - HEADER_MULTI_DATA_BITS + 7) >>> 3);
+    return 1 + ((numBits - getHeaderMultiDataBits(isSigned) + 7) >>> 3);
+  }
+
+  public static int getVarLongLength(final byte reservedBits, final Long x) {
+    return getVarLongLength(reservedBits, x, true);
   }
 
   /** Return the number of bytes necessary to encode a long using 
    * variable-length long encoding.
    */
+  public static int getVarLongLength(final Long x, boolean isSigned) {
+    return getVarLongLength((byte)0, x, isSigned);
+  }
+
   public static int getVarLongLength(final Long x) {
-    return getVarLongLength((byte)0, x);
+    return getVarLongLength(x, true);
   }
 
   /** Return the number of bytes necessary to encode an int using 
@@ -397,7 +474,9 @@ public class IntUtils
   /** Write byte b to long x. Any bits that will be written out of bounds
    * (offset &ge; 63) will be ignored. Assumes x is initialized to  
    * sign bit &gt;&gt; 63. */
-  private static long writeByte(byte b, int offset, int mask, long x) {
+  private static long writeByte(byte b, int offset, int mask, long x,
+      boolean isSigned)
+  {
     if (offset >= Long.SIZE - 1) 
       return x;
 
@@ -406,7 +485,7 @@ public class IntUtils
      * out/clear using 0 bits from b if x is negative. The long casts are 
      * necessary for 64-bit shift offsets (see Java Language Spec. 15.19).
      */
-    if (x >= 0) 
+    if (x >= 0 || !isSigned) 
       x |= (long)(b & mask) << offset;
     else 
       x &= ~((long)(~b & mask) << offset);
@@ -415,27 +494,34 @@ public class IntUtils
 
   /** Decode a variable-length long from a byte array */
   public static Long readVarLong(final byte reservedBits, final byte[] b, 
-      final int offset, Order order) 
+      final int offset, Order order, boolean isSigned) 
   {
     if (isNull(b[offset], order, reservedBits))
       return null;
 
-    int numBytes = decodeVarLongLength(reservedBits, b[offset]),
-        headerBits = getNumHeaderDataBits(numBytes) - reservedBits,
+    int numBytes = decodeVarLongLength(reservedBits, b[offset], isSigned),
+        headerBits = getNumHeaderDataBits(numBytes, isSigned) - reservedBits,
         numBits = headerBits + 8 * (numBytes - 1);
+
     /* Sign extend and right-propagate the header sign bit */
     long signMask = HEADER_SIGN >>> reservedBits,
-         negSign = -(b[offset] & signMask) >> Long.SIZE - 1, 
+         negSign = isSigned ? -(b[offset] & signMask) >> Long.SIZE - 1 : -1,
          x = ~negSign;
 
-    if (reservedBits > HEADER_MULTI_DATA_BITS)
+    if (reservedBits > getHeaderMultiDataBits(isSigned))
       throw new IllegalArgumentException("Cannot reserve more than " +
-          HEADER_MULTI_DATA_BITS + " bits");
-  
-    x = writeByte(b[offset], numBits -= headerBits, (1 << headerBits) - 1, x);
+          getHeaderMultiDataBits(isSigned) + " bits");
+ 
+    x = writeByte((byte) (b[offset] - (isSigned ? 0 : 1)), 
+        numBits -= headerBits, (1 << headerBits) - 1, x, isSigned);
     for (int i = 1; i < numBytes; i++) 
-      x = writeByte(b[offset + i], numBits -= 8, 0xff, x);
+      x = writeByte(b[offset + i], numBits -= 8, 0xff, x, isSigned);
     return x;
+  }
+
+  public static Long readVarLong(final byte reservedBits, final byte[] b, 
+      final int offset, Order order) {
+    return readVarLong(reservedBits, b, offset, order, true);
   }
 
   public static Long readVarLong(final byte reservedBits, final byte[] b, 
@@ -443,10 +529,22 @@ public class IntUtils
   {
     return readVarLong(reservedBits, b, offset, Order.ASCENDING);
   }
+
+  public static Long readVarLong(final byte reservedBits, final byte[] b, 
+      final int offset, boolean isSigned)
+  {
+    return readVarLong(reservedBits, b, offset, Order.ASCENDING, isSigned);
+  }
   
   /** Decode a variable-length long from a byte array */
   public static Long readVarLong(final byte[] b, final int offset) {
     return readVarLong(b, offset, Order.ASCENDING);
+  }
+
+  public static Long readVarLong(final byte[] b, final int offset, 
+      boolean isSigned) 
+  {
+    return readVarLong(b, offset, Order.ASCENDING, isSigned);
   }
 
   /** Decode a variable-length long from a byte array */
@@ -455,16 +553,28 @@ public class IntUtils
     return readVarLong((byte)0, b, offset, order);
   }
 
+  public static Long readVarLong(final byte[] b, final int offset, Order order,
+      boolean isSigned)
+  {
+    return readVarLong((byte)0, b, offset, order, isSigned);
+  }
+
   /** Decode a variable-length long from a DataInput object */
-  public static Long readVarLong(final byte reservedBits, final DataInput in) 
-    throws IOException 
+  public static Long readVarLong(final byte reservedBits, final DataInput in,
+      boolean isSigned) throws IOException 
   {
     byte header = in.readByte();
-    byte[] b = new byte[decodeVarLongLength(reservedBits, header)];
+    byte[] b = new byte[decodeVarLongLength(reservedBits, header, isSigned)];
 
     b[0] = header;
     in.readFully(b, 1, b.length - 1);
-    return readVarLong(reservedBits, b, 0);
+    return readVarLong(reservedBits, b, 0, isSigned);
+  }
+
+  public static Long readVarLong(final byte reservedBits, final DataInput in)
+    throws IOException
+  {
+    return readVarLong(reservedBits, in, true);
   }
 
   /** Decode a variable-length long from a DataInput object */

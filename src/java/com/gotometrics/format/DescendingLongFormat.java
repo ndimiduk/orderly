@@ -48,6 +48,13 @@ public class DescendingLongFormat extends LongFormat
   {
     super.encodeNullableLong(l != null ? new Long(~l.longValue()) : l, ibw);
   }
+  
+  public void encodeNullableUnsignedLong(final Long l, 
+      final ImmutableBytesWritable ibw)
+  {
+    super.encodeNullableUnsignedLong(l != null ? new Long(~l.longValue()) : l, 
+        ibw);
+  }
 
   @Override
   public long decodeLong(final ImmutableBytesWritable bytes) {
@@ -56,6 +63,13 @@ public class DescendingLongFormat extends LongFormat
 
   public Long decodeNullableLong(final ImmutableBytesWritable bytes) {
     Long l = super.decodeNullableLong(bytes);
+    if (l != null)
+      l = new Long(~l.longValue());
+    return l;
+  }
+
+  public Long decodeNullableUnsignedLong(final ImmutableBytesWritable bytes) {
+    Long l = super.decodeNullableUnsignedLong(bytes);
     if (l != null)
       l = new Long(~l.longValue());
     return l;

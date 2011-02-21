@@ -90,6 +90,14 @@ public class LongFormat extends DataFormat
     ibw.set(b);
   }
 
+  public void encodeNullableUnsignedLong(final Long l, 
+      final ImmutableBytesWritable ibw) 
+  {
+    byte[] b = new byte[IntUtils.getVarLongLength(l, false)];
+    IntUtils.writeVarLong(l, b, 0, getOrder(), false);
+    ibw.set(b);
+  }
+
   @Override
   public void encodeInt(final int i, final ImmutableBytesWritable ibw) {
     encodeLong(i, ibw);
@@ -129,6 +137,11 @@ public class LongFormat extends DataFormat
 
   public Long decodeNullableLong(final ImmutableBytesWritable bytes) {
     return IntUtils.readVarLong(bytes.get(), bytes.getOffset(), getOrder());
+  }
+
+  public Long decodeNullableUnsignedLong(final ImmutableBytesWritable bytes) {
+    return IntUtils.readVarLong(bytes.get(), bytes.getOffset(), getOrder(), 
+        false);
   }
 
   @Override
