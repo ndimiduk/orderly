@@ -13,6 +13,18 @@
  *  limitations under the License.
  */
 
-package com.gotometrics.hbase.format;
+package com.gotometrics.hbase.rowkey;
 
-public enum Order { ASCENDING, DESCENDING };
+public enum Order { 
+
+  private final byte mask;
+
+  public Order(byte mask) {
+    this.mask = mask;
+  }
+
+  public byte mask() { return mask; }
+
+  ASCENDING(0), 
+  DESCENDING((byte)0xff);
+};
