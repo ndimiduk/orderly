@@ -15,6 +15,7 @@
 
 package com.gotometrics.hbase.rowkey;
 
+/** The sort order of a row key, ascending or descending. */
 public enum Order { 
 
   private final byte mask;
@@ -23,6 +24,11 @@ public enum Order {
     this.mask = mask;
   }
 
+  /** Returns the byte mask associated with the sort order. This mask is used
+   * when by {@link RowKey} classes when serializing an object to its byte array
+   * representation. A byte in ascending order may be XOR'd with its mask to 
+   * ensure that it will sort in the direction specified by the Order object.
+   */
   public byte mask() { return mask; }
 
   ASCENDING(0), 
