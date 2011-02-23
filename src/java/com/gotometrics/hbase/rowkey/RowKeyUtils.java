@@ -321,11 +321,15 @@ public class RowKeyUtils {
     }
   } 
 
-  public byte[] toBytes(byte[] b, int offset, int length) {
+  public static byte[] toBytes(byte[] b, int offset, int length) {
     if (offset == 0 && length == b.length) 
       return b;
     else if (offset == 0)
       return Arrays.copyOf(b, length);
     return Arrays.copyOfRange(b, offset, offset + length);
+  }
+
+  public static byte[] toBytes(ImmutableBytesWritable w) {
+    return toBytes(w.get(), w.getOffset(), w.getLength());
   }
 }
