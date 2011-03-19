@@ -1,22 +1,36 @@
 <project name="hbase-rowkey" default="jar">
-
   <property file="${basedir}/build.properties" />
- 
   <property name="name" value="hbase-rowkey"/>
+  <property name="Name" value="HBase RowKey"/>
   <property name="version" value="0.1"/>
-  <property name="full.name" value="${name}-${version}"/>
+  <property name="final.name" value="${name}-${version}"/>
 
   <property name="src.dir" value="${basedir}/src"/>  	
   <property name="src.java" value="${src.dir}/java"/>  	
+  <property name="src.test" location="${src.dir}/test"/>
   <property name="lib.dir" value="${basedir}/lib"/>
 
   <property name="build.dir" value="${basedir}/build"/>
   <property name="build.classes" value="${build.dir}/classes"/>
+  <property name="build.test" location="${build.dir}/test"/>
+  <property name="build.lib" location="${build.dir}/lib"/>
   <property name="build.docs" value="${build.dir}/docs"/>
-  <property name="build.src" value="${build.dir}/src"/>
-  <property name="build.java" value="${build.src}/java"/>
+  <property name="build.javadoc" value="${build.docs}/api"/>
 
-  <property name="dist.dir" value="${basedir}/dist"/>
+  <property name="test.output" value="no"/>
+  <property name="test.timeout" value="600000"/>
+  <property name="test.log.dir" value="${build.test}/logs"/>
+  <property name="test.junit.output.format" value="plain"/>
+  <property name="test.random.seed" value="1298445547276"/>
+  <property name="test.random.count" value="100000"/>
+  <property name="test.random.maxstrlength" value="1024"/>
+  <property name="test.random.maxredzone" value="16"/>
+
+  <property name="dist.dir" value="${build.dir}/${final.name}"/>
+
+  <property name="javadoc.link.java"
+    value="http://download.oracle.com/javase/6/docs/api/"/>
+  <property name="javadoc.packages" value="com.gotometrics.hbase.rowkey.*"/>
 
   <property name="javac.debug" value="on"/>
   <property name="javac.optimize" value="on"/>
@@ -33,7 +47,12 @@
   <target name="init">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${build.classes}"/>
-    <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${build.test}"/>
+
+    <mkdir dir="${build.lib}"/>
+    <copy todir="${build.lib}">
+      <fileset dir="${lib.dir}" />
+    </copy>
   </target>
 
   <target name="compile" depends="init">
@@ -51,19 +70,129 @@
     </javac>
   </target>
 
-  <target name="jar" depends="compile">
-    <jar jarfile="${build.dir}/${full.name}.jar">
-      <manifest>
-        <attribute name="Implementation-Title" value="HBase RowKey"/>
-        <attribute name="Implementation-Version" value="${full.version}"/>
-        <attribute name="Implementation-Vendor" value="GotoMetrics"/>
-      </manifest>
-      <zipfileset dir="${build.classes}"/>
-    </jar>
+  <target name="jar" depends="compile, compile-test">
+    <jar jarfile="${build.dir}/${final.name}.jar" basedir="${build.classes}"/>
+    <jar jarfile="${build.dir}/${final.name}-test.jar"  
+         basedir="${build.test}"/>
+  </target>
+
+  <target name="package" depends="jar,javadoc">
+    <mkdir dir="${dist.dir}"/>
+    <copy todir="${dist.dir}">
+      <fileset dir="${build.dir}">
+        <include name="${final.name}.jar" />
+        <include name="${final.name}-test.jar" />
+      </fileset>
+    </copy>
+
+    <mkdir dir="${dist.dir}/lib"/>
+    <copy todir="${dist.dir}/lib">
+      <fileset dir="${build.lib}" />
+    </copy>
+
+    <mkdir dir="${dist.dir}/docs" />
+    <copy todir="${dist.dir}/docs">
+      <fileset dir="${build.docs}"/>
+    </copy>
+
+    <copy todir="${dist.dir}">
+      <fileset dir="${basedir}">
+        <include name="*.txt" />
+        <include name="build.xml" />
+      </fileset>
+    </copy>
+
+    <mkdir dir="${dist.dir}/src" />
+    <copy todir="${dist.dir}/src">
+      <fileset dir="${src.dir}"/>
+    </copy>
+  </target>
+
+  <target name="tar" depends="package">
+    <tar compression="gzip" longfile="gnu" 
+         destfile="${build.dir}/${final.name}.tar.gz"
+         basedir="${dist.dir}"/>
+  </target>
+
+  <target name="binary" depends="package">
+    <tar compression="gzip" longfile="gnu" 
+         destfile="${build.dir}/${final.name}-bin.tar.gz"
+         basedir="${dist.dir}" 
+         excludes="${dist.dir}/src/**,${dist.dir}/docs/**"/>
+  </target>
+
+  <target name="javadoc">
+    <mkdir dir="${build.javadoc}"/>
+    <javadoc
+      overview="${src.dir}/overview.html"
+      packagenames="com.gotometrics.hbase.rowkey.*"
+      destdir="${build.javadoc}"
+      author="true"
+      version="true"
+      use="true"
+      windowtitle="${Name} ${version} API"
+      doctitle="${Name} ${version} API"
+      bottom="Copyright &amp;copy; ${year} The Apache Software Foundation"
+      >
+    	<packageset dir="${src.dir}"/>
+        <link href="${javadoc.link.java}"/>
+        <classpath >
+          <path refid="classpath" />
+          <pathelement path="${java.class.path}"/>
+        </classpath>
+    </javadoc>
+  </target>	
+
+  <path id="test.classpath">
+    <pathelement location="${build.test}" />
+    <path refid="classpath"/>
+  </path>
+
+  <target name="compile-test" depends="compile">
+    <javac 
+     srcdir="${src.test}"	
+     includes="**/*.java"
+     destdir="${build.test}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="test.classpath"/>
+    </javac>
+  </target>
+
+  <target name="test" depends="compile-test">
+    <delete dir="${test.log.dir}"/>
+    <mkdir dir="${test.log.dir}"/>
+    <junit
+      printsummary="yes" showoutput="${test.output}" 
+      haltonfailure="no" fork="yes" maxmemory="512m"
+      errorProperty="tests.failed" failureProperty="tests.failed"
+      timeout="${test.timeout}">
+      
+      <sysproperty key="test.random.seed" value="${test.random.seed}"/>
+      <sysproperty key="test.random.count" value="${test.random.count}"/>
+      <sysproperty key="test.random.maxstrlength" 
+                   value="${test.random.maxstrlength}"/>
+      <sysproperty key="test.random.maxredzone" 
+                   value="${test.random.maxredzone}"/>
+      
+      <classpath refid="test.classpath"/>
+      <formatter type="${test.junit.output.format}" />
+      <batchtest todir="${build.test}" unless="testcase">
+        <fileset dir="${src.test}"
+                 includes="**/Test*.java" excludes="**/${test.exclude}.java" />
+      </batchtest>
+      <batchtest todir="${build.test}" if="testcase">
+        <fileset dir="${src.test}" includes="**/${testcase}.java"/>
+      </batchtest>
+    </junit>
+    <fail if="tests.failed">Tests failed!</fail>
   </target>
 
   <target name="clean">
     <delete dir="${build.dir}"/>
-    <delete dir="${dist.dir}"/>
   </target>
 </project>

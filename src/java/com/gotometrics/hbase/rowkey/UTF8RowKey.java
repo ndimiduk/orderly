@@ -18,6 +18,7 @@ package com.gotometrics.hbase.rowkey;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.util.Bytes;
 
 /** Serialize and deserialize UTF-8 byte arrays into HBase row keys.
  * Most of the work is done for us because sorting byte arrays of UTF-8 encoded 
@@ -44,68 +45,25 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  *
  * <h1> Descending sort </h1>
  * To sort in descending order we perform the same encodings as in ascending 
- * sort, except we logically invert (take the 1's complement) each byte, including
- * the null and termination bytes. Descending sort cannot use implicit 
- * termination (discussed below).
- *
- * <h1> Implicit termination </h1>
- * There is a single case where we deviate from the above encoding format.
- * If this class is the last class to serialize a row key byte, then we can
- * use the end of the row key as an implicit terminator if we are performing
- * an ascending sort. This avoids serializing the termination byte entirely.  We 
- * cannot use implicit termination with descending sort because in descending 
- * sort, &quot;aaa&quot; &lt; &quot;aa&quot;, but when using implicit 
- * termination &quot;aaa&quot; &gt; &quot;aa&quot; because there is no 
- * terminator byte to invert.
- *
- * To perform implict termination for a non-empty, non-NULL string, we 
- * speciy that we reach the end of the UTF-8 string when we reach the end of 
- * the underlying byte array array. This allows us to avoid using a terminator 
- * byte for non-empty, non-NULL strings.
- *
- * In this encoding format, NULL bytes are be represented by a zero-byte array,
- * and empty strings consist of a single terminator byte. We encode non-empty 
- * strings by adding 2 to each UTF-8 byte as before, but we now omit the 
- * trailing terminator byte. For ascending sort, this byte representation still 
- * guarantees that NULL &lt; empty string &lt; non-empty string. This works
- * because NULL, when encoded as a zero-byte array, compares less than
- * any non-zero array of bytes. 
- *
+ * sort, except we logically invert (take the 1's complement of) each byte, 
+ * including the null and termination bytes. 
  *
  * <h1> Usage </h1>
- * This is the fastest class for storing characters and strings. Two copies are
+ * This is the fastest class for storing characters and strings. 
  * It performs the minimum amount of copying during serialization and 
  * deserialization, performing only a single copy each time.
  */
-public class UTF8Key extends RowKey 
+public class UTF8RowKey extends RowKey 
 {
-  private static final byte NULL = (byte)0x00;
-                           TERMINATOR = (byte)0x01;
+  private static final byte NULL       = (byte)0x00,
+                            TERMINATOR = (byte)0x01;
 
   @Override
   public Class<?> getSerializedClass() { return byte[].class; }
 
-  protected boolean mustTerminate() {
-    return !order.equals(Order.ASC) || !isLastKey;
-  }
-
-  protected boolean isNull(ImmutableBytesWritable w) {
-    byte[] b = w.get();
-    int offset = w.getOffset();
-    return !mustTerminate() ? b.getLength() == 0 : mask(b[offset]) == NULL;
-  }
-
-  protected boolean isEmpty(ImmutableBytesWritable w) {
-    byte[] b = w.get();
-    int offset = w.getOffset();
-    return mask(b[offset]) == TERMINATOR;
-  }
-
   @Override
-  public long getSerializedLength(Object o) throws IOException {
-    if (o == null)
-      return mustTerminate() ? 1 : 0;
-    return Math.max(((byte[])o).length + (mustTerminate() ? 1 : 0), 1);
+  public int getSerializedLength(Object o) throws IOException {
+    return o == null ? 1 : ((byte[])o).length + 1;
   }
 
   @Override
@@ -116,55 +74,54 @@ public class UTF8Key extends RowKey
     int offset = w.getOffset();
 
     if (o == null) {
-      if (mustTerminate())
-        b[offset] = mask(NULL);
+      b[offset] = mask(NULL);
+      RowKeyUtils.seek(w, 1);
       return;
     }
 
     byte[] s = (byte[]) o;
     int len = s.length;
 
-    for (int i = 0; i < s.length; i++)
+    for (int i = 0; i < len; i++)
       b[offset + i] = mask((byte)(s[i] + 2));
-    if (mustTerminate() || s.length == 0)
-      b[offset + len++] = mask(TERMINATOR);
-    w.set(w.get(), w.getOffset() + len, w.getLength() - len);
+    b[offset + len] = mask(TERMINATOR);
+    RowKeyUtils.seek(w, len + 1);
   }
 
-  protected int getUTF8Length(ImmutableBytesWritable w) {
+  protected int getUTF8RowKeyLength(ImmutableBytesWritable w) {
     byte[] b = w.get();
     int offset = w.getOffset();
 
-    if (isNull(w) || isEmpty(w)) 
-      return 0;
-    else if (!mustTerminate()) 
-      return w.getLength();
+    if (b[offset] == mask(NULL))
+      return 1;
 
-    while (mask(b[offset]) != TERMINATOR)
-      offset++;
+    while (b[offset++] != mask(TERMINATOR)) ;
     return offset - w.getOffset();
   }
 
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
-    int len = getUTF8Length(w) + (mustTerminate() ? 1 : 0);
-    w.set(w.get(), w.getOffset() + len, w.getLength() - len);
+    RowKeyUtils.seek(w, getUTF8RowKeyLength(w));
   }
 
   @Override
-  public byte[] deserialize(ImmutableBytesWritable w) throws IOException {
-    if (isNull(w)) 
-      return null;
-    else if (isEmpty(w))
-      return ByteUtils.EMPTY;
+  public Object deserialize(ImmutableBytesWritable w) throws IOException {
+    int len = getUTF8RowKeyLength(w);
 
-    int len = getUTF8Length(w),
-        offset = w.getOffset();
-    byte[] s = w.get(),
-           b = new byte[len];
+    try {
+      int offset = w.getOffset();
+      byte[] s = w.get();
+      if (s[offset] == mask(NULL))
+        return null;
+      if (s[offset] == mask(TERMINATOR))
+        return RowKeyUtils.EMPTY;
 
-    for (int i = 0; i < len; i++)
-      b[i] = mask(s[i]) - 2;
-    return b;
+      byte[] b = new byte[len - 1];
+      for (int i = 0; i < b.length; i++)
+        b[i] = (byte) (mask(s[offset + i]) - 2);
+      return b;
+    } finally {
+      RowKeyUtils.seek(w, len);
+    }
   }
 }

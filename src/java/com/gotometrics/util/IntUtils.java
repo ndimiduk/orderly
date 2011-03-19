@@ -214,7 +214,7 @@ public class IntUtils
       boolean isSigned)
   {
     if (x == null) {
-      if (order.equals(Order.ASCENDING))
+      if (order == Order.ASCENDING)
         b[offset] = (byte) (HEADER_NULL_ASC >>> reservedBits);
       else
         b[offset] = (byte) (HEADER_NULL_DSC >>> reservedBits);
@@ -326,8 +326,8 @@ public class IntUtils
 
   public static boolean isNull(byte h, Order order, int reservedBits) {
     h = (byte) ((h << reservedBits) >> reservedBits);
-    return (order.equals(Order.ASCENDING) && h == HEADER_NULL_ASC)
-        || (order.equals(Order.DESCENDING) && h == HEADER_NULL_DSC);
+    return (order == Order.ASCENDING && h == HEADER_NULL_ASC)
+        || (order == Order.DESCENDING && h == HEADER_NULL_DSC);
   }
 
   /** Decode the length of a variable-length long from its header byte */

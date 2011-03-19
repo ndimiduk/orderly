@@ -15,24 +15,29 @@
 
 package com.gotometrics.hbase.rowkey;
 
-/** The sort order of a row key, ascending or descending. */
-public enum Order
-{ 
-  ASCENDING((byte)0), 
-  DESCENDING((byte)0xff);
+import org.apache.hadoop.hbase.util.Bytes;
 
-  private final byte mask;
-
-  Order(byte mask) {
-    this.mask = mask;
+public class TestStringRowKey extends TestUTF8RowKey
+{
+  @Override
+  public RowKey createRowKey() {
+    return new StringRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
+        Order.DESCENDING);
   }
 
-  /** Returns the byte mask associated with the sort order. When a byte in 
-   * ascending order is XOR'd with the mask, the result is the same byte 
-   * but sorted in the direction specified by the Order object. This mask is 
-   * used by {@link RowKey} classes when serializing an object to its byte array
-   * representation. 
-   */
-  public byte mask() { return mask; }
+  @Override
+  public Object createObject() {
+    Object o = super.createObject();
+    if (o == null)
+      return o;
+    return Bytes.toString((byte[])o);
+  }
 
-};
+  @Override
+  public int compareTo(Object o1, Object o2) {
+    if (o1 == null || o2 == null)
+      return super.compareTo(o1, o2);
+    return super.compareTo(Bytes.toBytes((String)o1), 
+        Bytes.toBytes((String)o2));
+  }
+}

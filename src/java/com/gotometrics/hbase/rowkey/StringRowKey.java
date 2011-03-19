@@ -15,23 +15,25 @@
 
 package com.gotometrics.hbase.rowkey;
 
+import java.io.IOException;
+
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serialize and deserialize Java Strings into HBase row keys.
+/** Serialize and deserialize Java Strings into row keys.
  * The serialization and deserialization method are identical to 
- * {@link UTF8Key} after converting the Java String to/from a UTF-8 byte
+ * {@link UTF8RowKey} after converting the Java String to/from a UTF-8 byte
  * array.
  *
  * <h1> Usage </h1>
  * This is the slowest class for storing characters and strings. Two copies are
  * made during serialization/deserialization, and furthermore the String
- * objects themselves cannot be re-used during deserialization.
- * Weigh the (most likely mild) cost of additional object instantiation
+ * objects themselves cannot be re-used across multiple deserializations.
+ * Weigh the cost of additional object instantiation
  * and copying against the benefits of being able to use all of the various 
  * handy and tidy String functions in Java.
  */
-public class StringKey extends UTF8Key 
+public class StringRowKey extends UTF8RowKey 
 {
   @Override
   public Class<?> getSerializedClass() { return String.class; }
@@ -40,12 +42,12 @@ public class StringKey extends UTF8Key
   public void serialize(Object o, ImmutableBytesWritable w) 
     throws IOException
   {
-    super.serialize(o == null ? o : Bytes.toBytes((String)o));
+    super.serialize(o == null ? o : Bytes.toBytes((String)o), w);
   }
 
   @Override
-  public String deserialize(ImmutableBytesWritable w) throws IOException {
-    byte[] b = super.deserialize(w);
+  public Object deserialize(ImmutableBytesWritable w) throws IOException {
+    byte[] b = (byte[]) super.deserialize(w);
     return b == null ? b : Bytes.toString(b);
   }
 }
