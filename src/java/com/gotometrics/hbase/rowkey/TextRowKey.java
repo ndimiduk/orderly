@@ -42,16 +42,28 @@ public class TextRowKey extends UTF8RowKey
   @Override
   public Class<?> getSerializedClass() { return Text.class; }
 
+  protected Object toUTF8(Object o) {
+    if (o == null || o instanceof byte[])
+      return o;
+    return RowKeyUtils.toBytes((Text)o);
+  }
+
   @Override
-  public void serialize(Object o, ImmutableBytesWritable w) 
-    throws IOException
-  {
-    super.serialize(o == null ? o : RowKeyUtils.toBytes((Text)o));
+  public int getSerializedLength(Object o) throws IOException {
+    return super.getSerializedLength(toUTF8(o));
+  }
+
+  @Override
+  public void serialize(Object o, ImmutableBytesWritable w) throws IOException {
+    super.serialize(toUTF8(o), w);
   }
 
   @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
     byte[] b = (byte[]) super.deserialize(w);
+    if (b == null)
+      return b;
+
     if (t == null)
       t = new Text();
     t.set(b);

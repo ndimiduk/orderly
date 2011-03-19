@@ -31,19 +31,9 @@ public class TestUTF8RowKey extends RandomRowKeyTestCase
   @Before
   @Override
   public void setUp() {
+    super.setUp();
     maxLength = Integer.valueOf(System.getProperty("test.random.maxstrlength", 
         "1024"));
-  }
-
-  @Override
-  public void testSerialization(Object o, ImmutableBytesWritable w) 
-    throws IOException 
-  {
-    super.testSerialization(o, w);
-
-    int expectedLen = o == null ? 1 : ((byte[])o).length + 1;
-    assertEquals("Last key data length invalid", key.getSerializedLength(o), 
-       expectedLen);
   }
 
   @Override

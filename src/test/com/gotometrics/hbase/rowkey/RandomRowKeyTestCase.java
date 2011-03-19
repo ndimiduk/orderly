@@ -40,12 +40,14 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
     numTests = Integer.valueOf(System.getProperty("test.random.count", "8192"));
     maxRedZone = Integer.valueOf(System.getProperty("test.random.maxredzone", 
           "16"));
+    super.setUp();
   }
 
   @After
   @Override
   public void tearDown() { 
     this.r = null;
+    super.tearDown();
   }
 
   public RandomRowKeyTestCase setRandom(Random r) {
@@ -89,7 +91,7 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
         len = key.getSerializedLength(o);
         b = new byte[len];
         key.serialize(o, b);
-        System.arraycopy(b, 0, w, w.getOffset(), len);
+        System.arraycopy(b, 0, w.get(), w.getOffset(), len);
         w.set(w.get(), w.getOffset() + len, w.getLength() - len);
         break;
 

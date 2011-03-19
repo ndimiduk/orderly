@@ -38,11 +38,22 @@ public class StringRowKey extends UTF8RowKey
   @Override
   public Class<?> getSerializedClass() { return String.class; }
 
+  protected Object toUTF8(Object o) {
+    if (o == null || o instanceof byte[])
+      return o;
+    return Bytes.toBytes((String)o);
+  }
+
+  @Override
+  public int getSerializedLength(Object o) throws IOException {
+    return super.getSerializedLength(toUTF8(o));
+  }
+
   @Override
   public void serialize(Object o, ImmutableBytesWritable w) 
     throws IOException
   {
-    super.serialize(o == null ? o : Bytes.toBytes((String)o), w);
+    super.serialize(toUTF8(o), w);
   }
 
   @Override
