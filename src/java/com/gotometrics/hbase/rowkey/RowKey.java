@@ -25,13 +25,13 @@ public abstract class RowKey
     this.order = Order.ASCENDING;
   }
 
-  /** Set the sort order of the row key, ascending or descending. */
+  /** Sets the sort order of the row key - ascending or descending. */
   public RowKey setOrder(Order order) {
     this.order = order;
     return this;
   }
 
-  /** Return the sort order of the row key - ascending or descending */
+  /** Gets the sort order of the row key - ascending or descending */
   public Order getOrder() { return order; }
 
   /** Returns the class of the object used for serialization/deserialization. 
@@ -40,13 +40,18 @@ public abstract class RowKey
    */
   public abstract Class<?> getSerializedClass();
 
-  /** Returns the length of the byte array when serializing */
+  /** Gets the length of the byte array when serializing an object.
+   * @param o object to serialize
+   * @return the length of the byte array used to serialize o
+   */
   public abstract int getSerializedLength(Object o) throws IOException;
 
-  /** Serialize object o to ImmutableBytesWritable buffer w. When this
-   * method returns, w's position will be adjusted by the number of bytes
-   * written. The offset (length) of w is incremented (decremented)
-   * by the number of bytes used to serialize o.
+  /** Serializes an object o to a byte array. When this
+   * method returns, the byte array's position will be adjusted by the number 
+   * of bytes written. The offset (length) of the byte array is incremented 
+   * (decremented) by the number of bytes used to serialize o.
+   * @param o object to serialize
+   * @param w byte array used to store the serialized object
    */
   public abstract void serialize(Object o, ImmutableBytesWritable w) 
     throws IOException;
@@ -68,18 +73,21 @@ public abstract class RowKey
     return b;
   }
 
-  /** Skip over the serialized key in ImmutableBytesWritable w. When this
-   * method returns, w's position will be adjusted by the number of bytes
-   * in the serialized key. The offset (length) of w is  incremented 
-   * (decremented) by the number of bytes in the serialized key.
+  /** Skips over a serialized key in the byte array. When this
+   * method returns, the byte array's position will be adjusted by the number of
+   * bytes in the serialized key. The offset (length) of the byte array is 
+   * incremented (decremented) by the number of bytes in the serialized key.
+   * @param w the byte array containing the serialized key
    */
   public abstract void skip(ImmutableBytesWritable w) throws IOException;
 
-  /** Deserialize the key from ImmutableBytesWritable w. The object is an 
+  /** Deserializes a key from the byte array. The returned object is an 
    * instance of the class returned by {@link getSerializedClass}. When this
-   * method returns, w's position will be adjusted by the number of bytes
-   * in the serialized key. The offset (length) of w is incremented 
-   * (decremented) by the number of bytes in the serialized key.
+   * method returns, the byte array's position will be adjusted by the number of
+   * bytes in the serialized key. The offset (length) of the byte array is 
+   * incremented (decremented) by the number of bytes in the serialized key.
+   * @param w the byte array used for key deserialization
+   * @return the deserialized key from the current position in the byte array
    */
   public abstract Object deserialize(ImmutableBytesWritable w)
     throws IOException;
