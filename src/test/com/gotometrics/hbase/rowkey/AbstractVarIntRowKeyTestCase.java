@@ -34,13 +34,9 @@ public abstract class AbstractVarIntRowKeyTestCase extends RandomRowKeyTestCase
     vi = createVarIntRowKey();
     reservedBits = r.nextInt(vi.getMaxReservedBits());
     reservedValue = r.nextInt(1 << reservedBits);
-    try {
-      return vi.setReservedBits(reservedBits)
-               .setReservedValue(reservedValue)
-               .setOrder(r.nextBoolean() ? Order.ASCENDING : Order.DESCENDING);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return vi.setReservedBits(reservedBits)
+             .setReservedValue(reservedValue)
+             .setOrder(r.nextBoolean() ? Order.ASCENDING : Order.DESCENDING);
   }
 
   protected void verifyReserved(ImmutableBytesWritable w) {

@@ -34,11 +34,15 @@ public abstract class RowKey
   /** Gets the sort order of the row key - ascending or descending */
   public Order getOrder() { return order; }
 
-  /** Returns the class of the object used for serialization/deserialization. 
+  /** Gets the class of the object used for serialization.
    * @see #serialize
-   * @see #deserialize
    */
   public abstract Class<?> getSerializedClass();
+
+  /** Gets the class of the object used for deserialization.
+   * @see #deserialize
+   */
+  public Class<?> getDeserializedClass() { return getSerializedClass(); }
 
   /** Gets the length of the byte array when serializing an object.
    * @param o object to serialize

@@ -137,15 +137,15 @@ public abstract class AbstractVarIntRowKey extends RowKey
   /** Sets the number of reserved bits in the header byte. Must not exceed
    * the value returned by @{link getMaxReservedBits}.
    * @param  reservedBits number of reserved header bits
-   * @throws IOException  if reservedBits &gt; maximum number of reserved bits
+   * @throws IndexOutOfBoundsException  if reservedBits &gt; the maximum number 
+   *                                    of reserved bits
    * @return this object
    */
   public AbstractVarIntRowKey setReservedBits(int reservedBits) 
-    throws IOException 
   { 
     if (reservedBits > getMaxReservedBits())
-      throw new IOException("Requested " + reservedBits + " reserved bits " +
-          "but only " + getMaxReservedBits() + " permitted");
+      throw new IndexOutOfBoundsException("Requested " + reservedBits + 
+          " reserved bits " + "but only " + getMaxReservedBits() + " permitted");
     this.reservedBits = reservedBits;
     return this;
   }
