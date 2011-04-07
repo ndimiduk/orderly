@@ -59,7 +59,6 @@
   <target name="compile" depends="init">
     <javac 
      srcdir="${src.java}"	
-     includes="com/gotometrics/hbase/rowkey/**.java"
      destdir="${build.classes}"
      debug="${javac.debug}"
      optimize="${javac.optimize}"
