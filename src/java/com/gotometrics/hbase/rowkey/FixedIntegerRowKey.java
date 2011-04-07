@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * to/from an Integer.
  *
  * <h1> Usage </h1>
- * This is the slower class for storing ints. One copy is made when 
+ * This is the slower class for storing ints. No copies are made when 
  * serializing and deserializing. Unfortunately Integer objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive ints are first passed to 
@@ -35,13 +35,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class FixedIntegerRowKey extends FixedIntWritableRowKey 
 {
+  private IntWritable iw;
+
   @Override
   public Class<?> getSerializedClass() { return Integer.class; }
 
   protected Object toIntWritable(Object o) {
     if (o == null || o instanceof IntWritable)
       return o;
-    return new IntWritable((Integer)o);
+    if (iw == null)
+      iw = new IntWritable();
+    iw.set((Integer)o);
+    return iw;
   }
 
   @Override

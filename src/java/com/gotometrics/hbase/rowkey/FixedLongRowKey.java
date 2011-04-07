@@ -36,13 +36,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class FixedLongRowKey extends FixedLongWritableRowKey 
 {
+  private LongWritable lw;
+
   @Override
   public Class<?> getSerializedClass() { return Long.class; }
 
   protected Object toLongWritable(Object o) {
     if (o == null || o instanceof LongWritable)
       return o;
-    return new LongWritable((Long)o);
+    if (lw == null)
+      lw = new LongWritable();
+    lw.set((Long)o);
+    return lw;
   }
 
   @Override

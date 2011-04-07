@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * Long.
  *
  * <h1> Usage </h1>
- * This is the slower class for storing longs. One copy is made when 
+ * This is the slower class for storing longs. No copies are made when 
  * serializing and deserializing. Unfortunately Long objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive longs are first passed to 
@@ -36,13 +36,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class LongRowKey extends LongWritableRowKey 
 {
+  private LongWritable lw;
+
   @Override
   public Class<?> getSerializedClass() { return Long.class; }
 
   protected Object toLongWritable(Object o) {
     if (o == null || o instanceof LongWritable)
       return o;
-    return new LongWritable((Long)o);
+    if (lw == null)
+      lw = new LongWritable();
+    lw.set((Long)o);
+    return lw;
   }
 
   @Override

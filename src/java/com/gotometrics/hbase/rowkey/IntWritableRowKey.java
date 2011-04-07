@@ -73,7 +73,7 @@ import org.apache.hadoop.io.Writable;
  * </ul>
  *
  * Bits 6 and 7 are used in all encodings. If bit 6 indicates a single byte
- * encodng, then bits 0-5 are all data bits. Otherwise, bit 5 is used to
+ * encoding, then bits 0-5 are all data bits. Otherwise, bit 5 is used to
  * indicate a double byte encoding. If this is true, then bits 0-4 are data
  * bits. Otherwise, bits 3-4 specify the length of the multi-byte (&gt; 2)
  * encoding, with a +3 bias as described below. In all cases, bits 0-2 are 

@@ -111,9 +111,8 @@ public class DoubleWritableRowKey extends RowKey
       l = Double.doubleToLongBits(((DoubleWritable)o).get());
       l = (l ^ ((l >> Long.SIZE - 1) | Long.MIN_VALUE)) + 1; 
     }
-    
-    System.arraycopy(Bytes.toBytes(l ^ order.mask()), 0, b, offset, 
-        Bytes.SIZEOF_LONG);
+   
+    Bytes.putLong(b, offset, l ^ order.mask()); 
     RowKeyUtils.seek(w, Bytes.SIZEOF_LONG);
   }
 

@@ -35,13 +35,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class FixedUnsignedIntegerRowKey extends FixedUnsignedIntWritableRowKey 
 {
+  private IntWritable iw;
+
   @Override
   public Class<?> getSerializedClass() { return Integer.class; }
 
   protected Object toIntWritable(Object o) {
     if (o == null || o instanceof IntWritable)
       return o;
-    return new IntWritable((Integer)o);
+    if (iw == null)
+      iw = new IntWritable();
+    iw.set((Integer)o);
+    return iw;
   }
 
   @Override

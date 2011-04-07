@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * Double.
  *
  * <h1> Usage </h1>
- * This is the slower class for storing doubles. Only one copy is made when 
+ * This is the slower class for storing doubles. No copies are made when 
  * serializing and deserializing, but unfortunately Double objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive doubles are first passed to 
@@ -35,13 +35,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class DoubleRowKey extends DoubleWritableRowKey 
 {
+  private DoubleWritable dw;
+
   @Override
   public Class<?> getSerializedClass() { return Double.class; }
 
   protected Object toDoubleWritable(Object o) {
     if (o == null || o instanceof DoubleWritable)
       return o;
-    return new DoubleWritable((Double)o);
+    if (dw == null)
+      dw = new DoubleWritable();
+    dw.set((Double)o);
+    return dw;
   }
 
   @Override

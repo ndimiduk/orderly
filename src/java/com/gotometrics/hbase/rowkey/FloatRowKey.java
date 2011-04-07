@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * Float.
  *
  * <h1> Usage </h1>
- * This is the slower class for storing floats. Only one copy is made when 
+ * This is the slower class for storing floats. No copies are made when 
  * serializing and deserializing, but unfortunately Float objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive floats are first passed to 
@@ -35,13 +35,18 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  */
 public class FloatRowKey extends FloatWritableRowKey 
 {
+  private FloatWritable fw;
+
   @Override
   public Class<?> getSerializedClass() { return Float.class; }
 
   protected Object toFloatWritable(Object o) {
     if (o == null || o instanceof FloatWritable)
       return o;
-    return new FloatWritable((Float)o);
+    if (fw == null)
+      fw = new FloatWritable();
+    fw.set((Float)o);
+    return fw;
   }
 
   @Override

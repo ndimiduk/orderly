@@ -80,9 +80,8 @@ import org.apache.hadoop.hbase.util.Bytes;
  * sort, except we logically invert (take the 1's complement of) each byte. 
  *
  * <h1> Usage </h1>
- * This is the fastest class for storing floats. It performs the minimum amount
- * of copying during serialization and deserialization, performing only a single
- * copy during serialization and no copies during deserialization.
+ * This is the fastest class for storing floats. It performs the no copying
+ * during serialization and deserialization.
  */
 public class FloatWritableRowKey extends RowKey 
 {
@@ -111,9 +110,8 @@ public class FloatWritableRowKey extends RowKey
       j = Float.floatToIntBits(((FloatWritable)o).get());
       j = (j ^ ((j >> Integer.SIZE - 1) | Integer.MIN_VALUE)) + 1; 
     }
-    
-    System.arraycopy(Bytes.toBytes(j ^ order.mask()), 0, b, offset, 
-        Bytes.SIZEOF_INT);
+   
+    Bytes.putInt(b, offset, j ^ order.mask());
     RowKeyUtils.seek(w, Bytes.SIZEOF_INT);
   }
 
