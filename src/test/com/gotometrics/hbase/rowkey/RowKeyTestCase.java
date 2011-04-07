@@ -68,8 +68,8 @@ public abstract class RowKeyTestCase
   public void assertBoundsEquals(ImmutableBytesWritable w, int offset, 
       int len)
   {
-    assertEquals("Offset corrupt", w.getOffset(), offset);
-    assertEquals("Length corrupt", w.getLength(), len);
+    assertEquals("Offset corrupt", offset, w.getOffset());
+    assertEquals("Length corrupt", len, w.getLength());
   }
 
   public void testSerialization(Object o, ImmutableBytesWritable w) 
@@ -86,7 +86,7 @@ public abstract class RowKeyTestCase
     w.set(w.get(), origOffset, origLength);
     Object p = deserialize(w);
 
-    assertEquals("Data corrupt", compareTo(o, p), 0);
+    assertEquals("Data corrupt", 0, compareTo(o, p));
     assertBoundsEquals(w, origOffset + expectedLength, 
         origLength - expectedLength);
     w.set(w.get(), origOffset, origLength);

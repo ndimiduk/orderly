@@ -20,8 +20,6 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Before;
 
 public class TestUTF8RowKey extends RandomRowKeyTestCase
