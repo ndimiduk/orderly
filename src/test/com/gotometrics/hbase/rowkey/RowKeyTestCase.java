@@ -30,24 +30,23 @@ public abstract class RowKeyTestCase
 {
   protected RowKey key;
 
-  public abstract RowKey createRowKey();
+  protected abstract RowKey createRowKey();
 
   public abstract Object createObject();
 
   public abstract int compareTo(Object o1, Object o2);
 
-  @Before
-  public void setUp() {
-    key = createRowKey();
-  }
-
-  @After
-  public void tearDown() {
-    key = null;
-  }
-
   public RowKeyTestCase setRowKey(RowKey key) { this.key = key; return this; }
 
+  public RowKeyTestCase setRowKey() { return setRowKey(createRowKey()); }
+
+  public RowKey getRowKey() { return key; }
+
+  @Before
+  public void setUp() { }
+
+  @After
+  public void tearDown() { key = null; }
 
   public void serialize(Object o, ImmutableBytesWritable w) 
     throws IOException 

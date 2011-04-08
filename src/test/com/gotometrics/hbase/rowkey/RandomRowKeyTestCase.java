@@ -36,18 +36,12 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   @Before
   @Override
   public void setUp() {
-    r = new Random(Long.valueOf(System.getProperty("test.random.seed", "0")));
+    if (r == null)
+      r = new Random(Long.valueOf(System.getProperty("test.random.seed", "0")));
     numTests = Integer.valueOf(System.getProperty("test.random.count", "8192"));
     maxRedZone = Integer.valueOf(System.getProperty("test.random.maxredzone", 
           "16"));
     super.setUp();
-  }
-
-  @After
-  @Override
-  public void tearDown() { 
-    this.r = null;
-    super.tearDown();
   }
 
   public RandomRowKeyTestCase setRandom(Random r) {
@@ -158,8 +152,12 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   @Override
   public void testRowKey() throws IOException {
     for (int i = 0; i < numTests; i++) {
-      setRowKey(createRowKey());
+      setRowKey();
       super.testRowKey();
+      if (i != numTests - 1) {
+        tearDown();
+        setUp();
+      }
     }
   }
 

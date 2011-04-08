@@ -24,6 +24,8 @@
   <property name="test.random.seed" value="1298445547276"/>
   <property name="test.random.count" value="100000"/>
   <property name="test.random.maxstrlength" value="1024"/>
+  <property name="test.random.maxfieldcount" value="32"/>
+  <property name="test.random.maxfieldnest" value="4"/>
   <property name="test.random.maxbits" value="2048"/>
   <property name="test.random.maxredzone" value="16"/>
 
