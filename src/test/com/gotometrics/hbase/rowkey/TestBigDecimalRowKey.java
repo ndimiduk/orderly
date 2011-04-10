@@ -33,10 +33,7 @@ public class TestBigDecimalRowKey extends RandomRowKeyTestCase
   }
 
   @Override
-  public RowKey createRowKey() {
-    return new BigDecimalRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-        Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new BigDecimalRowKey(); }
 
   private BigInteger randBigInteger() {
     int bits = r.nextInt(maxBits);

@@ -20,10 +20,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class TestStringRowKey extends TestUTF8RowKey
 {
   @Override
-  public RowKey createRowKey() {
-    return new StringRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-        Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new StringRowKey(); }
 
   @Override
   public Object createObject() {

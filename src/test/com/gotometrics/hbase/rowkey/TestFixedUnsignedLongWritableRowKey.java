@@ -21,10 +21,7 @@ public class TestFixedUnsignedLongWritableRowKey
   extends TestFixedLongWritableRowKey
 {
   @Override
-  public RowKey createRowKey() {
-    return new FixedUnsignedLongWritableRowKey().setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new FixedUnsignedLongWritableRowKey(); }
 
   @Override
   public int compareTo(Object o1, Object o2) {

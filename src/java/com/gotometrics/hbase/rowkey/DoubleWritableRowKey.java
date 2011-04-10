@@ -94,6 +94,8 @@ public class DoubleWritableRowKey extends RowKey
 
   @Override
   public int getSerializedLength(Object o) throws IOException {
+    if (o == null && !terminate())
+      return 0;
     return Bytes.SIZEOF_LONG;
   }
 
@@ -106,6 +108,8 @@ public class DoubleWritableRowKey extends RowKey
     long l;
 
     if (o == null) {
+      if (!terminate())
+        return;
       l = NULL;
     } else {
       l = Double.doubleToLongBits(((DoubleWritable)o).get());
@@ -118,16 +122,20 @@ public class DoubleWritableRowKey extends RowKey
 
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
+    if (w.getLength() <= 0)
+      return;
     RowKeyUtils.seek(w, Bytes.SIZEOF_LONG);
   }
 
   @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
-    try {
-      int offset = w.getOffset();
-      byte[] s = w.get();
-      long l = Bytes.toLong(s, offset) ^ order.mask();
+    byte[] s = w.get();
+    int offset = w.getOffset();
+    if (w.getLength() <= 0)
+      return null;
 
+    try {
+      long l = Bytes.toLong(s, offset) ^ order.mask();
       if (l == NULL)
         return null;
 

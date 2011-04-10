@@ -20,10 +20,7 @@ import org.apache.hadoop.io.IntWritable;
 public class TestFixedIntWritableRowKey extends RandomRowKeyTestCase
 {
   @Override
-  public RowKey createRowKey() {
-    return new FixedIntWritableRowKey().setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new FixedIntWritableRowKey(); }
 
   @Override
   public Object createObject() {

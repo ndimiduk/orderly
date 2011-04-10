@@ -135,7 +135,7 @@ public abstract class AbstractVarIntRowKey extends RowKey
   public int getMaxReservedBits() { return HEADER_EXT_DATA_BITS; }
 
   /** Sets the number of reserved bits in the header byte. Must not exceed
-   * the value returned by @{link getMaxReservedBits}.
+   * the value returned by @{link getMaxReservedBits}. 
    * @param  reservedBits number of reserved header bits
    * @throws IndexOutOfBoundsException  if reservedBits &gt; the maximum number 
    *                                    of reserved bits
@@ -212,7 +212,7 @@ public abstract class AbstractVarIntRowKey extends RowKey
   @Override
   public int getSerializedLength(Object o) throws IOException {
     if (o == null)
-      return 1;
+      return terminate() ? 1 : 0;
 
   /* Compute the number of bits we must store in our variable-length integer
    * serialization. This is the bit position + 1 of the most significant bit 
@@ -315,8 +315,10 @@ public abstract class AbstractVarIntRowKey extends RowKey
     int offset = w.getOffset();
 
     if (o == null) {
-      b[offset] = getNull();
-      RowKeyUtils.seek(w, 1);
+      if (terminate()) {
+        b[offset] = getNull();
+        RowKeyUtils.seek(w, 1);
+      }
       return;
     }
 
@@ -367,6 +369,8 @@ public abstract class AbstractVarIntRowKey extends RowKey
   public void skip(ImmutableBytesWritable w) throws IOException {
     byte[] b = w.get();
     int offset = w.getOffset();
+    if (w.getLength() <= 0)
+      return;
 
     if (isNull(b[offset])) {
       RowKeyUtils.seek(w, 1);
@@ -376,11 +380,12 @@ public abstract class AbstractVarIntRowKey extends RowKey
     }
   }
 
-
   @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
     byte[] b = w.get();
     int offset = w.getOffset();
+    if (w.getLength() <= 0)
+      return null;
 
     if (isNull(b[offset])) {
       RowKeyUtils.seek(w, 1);

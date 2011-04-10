@@ -20,10 +20,7 @@ import org.apache.hadoop.io.Text;
 public class TestTextRowKey extends TestUTF8RowKey
 {
   @Override
-  public RowKey createRowKey() {
-    return new TextRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-        Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new TextRowKey(); }
 
   @Override
   public Object createObject() {

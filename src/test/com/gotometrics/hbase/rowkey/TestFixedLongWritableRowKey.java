@@ -20,10 +20,7 @@ import org.apache.hadoop.io.LongWritable;
 public class TestFixedLongWritableRowKey extends RandomRowKeyTestCase
 {
   @Override
-  public RowKey createRowKey() {
-    return new FixedLongWritableRowKey().setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new FixedLongWritableRowKey(); }
 
   @Override
   public Object createObject() {

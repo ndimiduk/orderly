@@ -20,10 +20,7 @@ import org.apache.hadoop.io.DoubleWritable;
 public class TestDoubleRowKey extends TestDoubleWritableRowKey
 {
   @Override
-  public RowKey createRowKey() {
-    return new DoubleRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-        Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new DoubleRowKey(); }
 
   @Override
   public Object createObject() {

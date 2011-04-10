@@ -93,6 +93,8 @@ public class FloatWritableRowKey extends RowKey
 
   @Override
   public int getSerializedLength(Object o) throws IOException {
+    if (o == null && !terminate())
+      return 0;
     return Bytes.SIZEOF_INT;
   }
 
@@ -105,6 +107,8 @@ public class FloatWritableRowKey extends RowKey
     int j;
 
     if (o == null) {
+      if (!terminate())
+        return;
       j = NULL;
     } else {
       j = Float.floatToIntBits(((FloatWritable)o).get());
@@ -117,14 +121,19 @@ public class FloatWritableRowKey extends RowKey
 
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
+    if (w.getLength() <= 0)
+      return;
     RowKeyUtils.seek(w, Bytes.SIZEOF_INT);
   }
 
   @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
+    byte[] s = w.get();
+    int offset = w.getOffset();
+    if (w.getLength() <= 0)
+      return null;
+
     try {
-      int offset = w.getOffset();
-      byte[] s = w.get();
       int j = Bytes.toInt(s, offset) ^ order.mask();
 
       if (j == NULL)

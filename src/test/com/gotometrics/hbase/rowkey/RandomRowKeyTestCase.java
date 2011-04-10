@@ -78,7 +78,7 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
       case 1: /* serialize(Object) */
         b = key.serialize(o);
         System.arraycopy(b, 0, w.get(), w.getOffset(), b.length);
-        w.set(w.get(), w.getOffset() + b.length, w.getLength() - b.length);
+        RowKeyUtils.seek(w, b.length);
         break;
 
       case 2: /* serialize(Object, byte[]) */
@@ -86,13 +86,13 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
         b = new byte[len];
         key.serialize(o, b);
         System.arraycopy(b, 0, w.get(), w.getOffset(), len);
-        w.set(w.get(), w.getOffset() + len, w.getLength() - len);
+        RowKeyUtils.seek(w, len);
         break;
 
       default: /* serialize(Object, byte[], offset) */
         key.serialize(o, w.get(), w.getOffset());
         len = key.getSerializedLength(o);
-        w.set(w.get(), w.getOffset() + len, w.getLength() - len);
+        RowKeyUtils.seek(w, len);
         break;
     }
   }
@@ -104,7 +104,7 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
 
     switch(r.nextInt(3)) {
       case 0: /* deserialize(ImmutableBytesWritable) */
-        o = deserialize(w);
+        o = key.deserialize(w);
         break;
 
       case 1: /* deserialize(byte[] b) */
@@ -114,8 +114,8 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
         break;
 
       default: /* deserialize(byte[] b, int offset) */
-        o = key.deserialize(Arrays.copyOfRange(w.get(), w.getOffset(),
-              w.getOffset() + w.getLength()));
+        o = key.deserialize(Arrays.copyOfRange(w.get(), 0, w.getOffset() + 
+              w.getLength()), w.getOffset());
         key.skip(w);
         break;
     }
@@ -152,7 +152,8 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   @Override
   public void testRowKey() throws IOException {
     for (int i = 0; i < numTests; i++) {
-      setRowKey();
+      setRowKey(createRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
+            Order.DESCENDING).setMustTerminate(r.nextBoolean()));
       super.testRowKey();
       if (i != numTests - 1) {
         tearDown();

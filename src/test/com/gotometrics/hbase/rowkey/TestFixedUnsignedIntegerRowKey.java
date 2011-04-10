@@ -21,10 +21,7 @@ public class TestFixedUnsignedIntegerRowKey
   extends TestFixedUnsignedIntWritableRowKey
 {
   @Override
-  public RowKey createRowKey() {
-    return new FixedUnsignedIntegerRowKey().setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new FixedUnsignedIntegerRowKey(); }
 
   @Override
   public Object createObject() {

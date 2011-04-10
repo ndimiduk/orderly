@@ -87,7 +87,6 @@ public class TestStructRowKey extends RandomRowKeyTestCase
       ((TestStructRowKey)t).setMaxNest(maxNest - 1);
     t.setRandom(r);
     t.setUp();
-    t.setRowKey();
     return t;
   }
 
@@ -122,11 +121,10 @@ public class TestStructRowKey extends RandomRowKeyTestCase
     RowKey[] fields = new RowKey[fieldTests.length];
     for (int i = 0; i < fields.length; i++) {
       fields[i] = fieldTests[i].createRowKey();
+      fields[i].setOrder(r.nextBoolean() ? Order.ASCENDING : Order.DESCENDING);
       fieldTests[i].setRowKey(fields[i]);
     }
-    
-    return new StructRowKey(fields).setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
+    return new StructRowKey(fields);
   }
 
   @Override

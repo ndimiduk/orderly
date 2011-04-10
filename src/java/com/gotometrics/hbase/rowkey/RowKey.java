@@ -19,20 +19,37 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 public abstract class RowKey 
 {
   protected Order order;
+  protected boolean mustTerminate;
   private ImmutableBytesWritable w;
 
-  public RowKey() {
-    this.order = Order.ASCENDING;
-  }
+  public RowKey() { this.order = Order.ASCENDING; }
 
-  /** Sets the sort order of the row key - ascending or descending. */
-  public RowKey setOrder(Order order) {
-    this.order = order;
-    return this;
-  }
+  /** Sets the sort order of the row key - ascending or descending. 
+   */ 
+  public RowKey setOrder(Order order) { this.order = order; return this; }
 
   /** Gets the sort order of the row key - ascending or descending */
   public Order getOrder() { return order; }
+
+  /** Returns true if the row key serialization must be explicitly terminated 
+   * in some fashion (such as a terminator byte or a self-describing length).
+   * If this is false, the end of the byte array may serve as an implicit 
+   * terminator. Defaults to false.
+   */
+  public boolean mustTerminate() { return mustTerminate; }
+
+  /** Sets the mustTerminate flag for this row key. If this flag is false,
+   * the end of the byte array can be used to terminate encoded values. You
+   * should only set this value if you are adding a custom byte value suffix
+   * to a row key.
+   */
+  public RowKey setMustTerminate(boolean mustTerminate) {
+    this.mustTerminate = mustTerminate;
+    return this;
+  }
+
+  /** Returns true if termination is required */
+  boolean terminate() { return mustTerminate || order == Order.DESCENDING; }
 
   /** Gets the class of the object used for serialization.
    * @see #serialize

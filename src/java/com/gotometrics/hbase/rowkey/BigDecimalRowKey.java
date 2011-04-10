@@ -150,7 +150,7 @@ public class BigDecimalRowKey extends RowKey
 
   public BigDecimalRowKey() {
     expKey = new ExponentRowKey();
-    expKey.setReservedBits(HEADER_BITS);
+    expKey.setReservedBits(HEADER_BITS).setMustTerminate(true);
   }
 
   @Override
@@ -175,9 +175,12 @@ public class BigDecimalRowKey extends RowKey
 
   /** Gets the length of a String if serialized in our BCD format. We require
    * 1 byte for every 2 characters, rounding up. Furthermore, if the number
-   * of characters is even, we require an additional byte for terminator nibble.
+   * of characters is even, we require an additional byte for the
+   * terminator nibble if terminate() is true.
    */
-  protected int getSerializedLength(String s) { return (s.length() + 2) >>> 1; }
+  protected int getSerializedLength(String s) { 
+    return (s.length() + (terminate() ? 2 : 1)) >>> 1; 
+  }
 
   /** Serializes a decimal String s into packed, zero nibble-terminated BCD 
    * format.  After this operation completes, the position (length) of the byte 
@@ -213,7 +216,7 @@ public class BigDecimalRowKey extends RowKey
   @Override
   public int getSerializedLength(Object o) throws IOException {
     if (o == null)
-      return expKey.getSerializedLength(null);
+      return terminate() ? expKey.getSerializedLength(null) : 0;
 
     BigDecimal d = ((BigDecimal)o).stripTrailingZeros();
     BigInteger i = d.unscaledValue();
@@ -237,8 +240,10 @@ public class BigDecimalRowKey extends RowKey
     resetSignMask();
 
     if (o == null) {
-      expKey.setReservedValue(mask(HEADER_NULL));
-      expKey.serialize(null, w);
+      if (terminate()) {
+        expKey.setReservedValue(mask(HEADER_NULL));
+        expKey.serialize(null, w);
+      }
       return;
     }
 
@@ -266,40 +271,51 @@ public class BigDecimalRowKey extends RowKey
     serializeBCD(s, w);
   }
 
+  /** Decodes a Binary Coded Decimal digit and adds it to a string. Returns 
+   * true (and leaves string unmodified) if digit is the terminator byte.
+   * Returns false otherwise.
+   */
+  protected boolean addDigit(byte bcd, StringBuilder sb) {
+    if (bcd == 0)
+      return true;
+    sb.append((char) ('0' + bcd - 1));
+    return false;
+  }
+
   /** Converts a packed, zero nibble-terminated BCD byte array into an unsigned 
    * decimal String. 
    */
   protected String deserializeBCD(ImmutableBytesWritable w) {
     byte[] b = w.get();
     int offset = w.getOffset(),
-        i = 0,
-        shift = 4;
+        len = w.getLength(),
+        i = 0;
 
     StringBuilder sb = new StringBuilder();
-    while(true) {
-      byte bcd = (byte) ((mask(b[offset + (i >>> 1)]) >>> shift) & 0xf);
-      if (bcd == 0)
+    while(i < len) {
+      byte c = mask(b[offset + i++]);
+      if (addDigit((byte) ((c >>> 4) & 0xf), sb)
+          || addDigit((byte) (c & 0xf), sb))
         break;
-      sb.append((char) ('0' + bcd - 1));
-      i++;
-      shift ^= 4;
     }
 
-    RowKeyUtils.seek(w, 1 + (i >>> 1));
+    RowKeyUtils.seek(w, i);
     return sb.toString();
   }
 
   protected int getBCDEncodedLength(ImmutableBytesWritable w) {
     byte[] b = w.get();
     int offset = w.getOffset(),
-        len = 0;
+        len = w.getLength(),
+        i = 0;
 
-    byte c;
-    do {
-      c = mask(b[offset + len++]);
-    } while (((c & 0xf0) != 0) && ((c & 0x0f) != 0));
+    while (i < len) {
+      byte c = mask(b[offset + i++]);
+      if (((c & 0xf0) == 0) || ((c & 0x0f) == 0))
+        break;
+    }
 
-    return len;
+    return i;
   }
 
   /** Deserializes BigDecimal header from exponent byte. This method will set
@@ -316,6 +332,9 @@ public class BigDecimalRowKey extends RowKey
 
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
+    if (w.getLength() <= 0)
+      return;
+
     byte b = w.get()[w.getOffset()];
     deserializeHeader(b);
     expKey.skip(w);
@@ -328,8 +347,11 @@ public class BigDecimalRowKey extends RowKey
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
     byte[] b = w.get();
     int offset = w.getOffset();
-    byte h = deserializeHeader(b[offset]);
 
+    if (w.getLength() <= 0)
+      return null;
+
+    byte h = deserializeHeader(b[offset]);
     LongWritable o = (LongWritable) expKey.deserialize(w);
     if (o == null) 
       return h == HEADER_NULL ? null : BigDecimal.ZERO;

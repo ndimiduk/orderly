@@ -35,10 +35,7 @@ public class TestUTF8RowKey extends RandomRowKeyTestCase
   }
 
   @Override
-  public RowKey createRowKey() {
-    return new UTF8RowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-        Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new UTF8RowKey(); }
 
   @Override
   public Object createObject() {

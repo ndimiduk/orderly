@@ -21,13 +21,13 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 /** Serialize and deserialize a struct (record) row key into a sortable
  * byte array. A struct row key is a composed of a fixed number of fields.
- * Each field is a @{link RowKey} of any subtype (including another struct).
+ * Each field is a subclass of @{link RowKey} (and may even be another struct).
  * The struct is sorted by its field values in the order in which the fields 
  * are declared.
  * <p>
  * This is the same general concept as a multi-column primary
- * key or index in MySQL (where the primary key is a struct, and the columns are 
- * field row keys). 
+ * key or index in MySQL, where the primary key is a struct and the columns are 
+ * field row keys. 
  *
  * <h1> NULL </h1>
  * Structs themselves may not be NULL. However, struct fields may be NULL 
@@ -51,7 +51,7 @@ public class StructRowKey extends RowKey
   /** Creates a struct row key object.
    * @param fields - the field row keys of the struct (in declaration order) 
    */
-  public StructRowKey(RowKey[] fields) { this.fields = fields; }
+  public StructRowKey(RowKey[] fields) { setFields(fields); }
 
   @Override
   public RowKey setOrder(Order order) {
@@ -65,10 +65,17 @@ public class StructRowKey extends RowKey
     return this;
   }
 
+  public StructRowKey setFields(RowKey[] fields) {
+    this.fields = fields; 
+    return this;
+  }
+
+  public RowKey[] getFields() { return fields; }
+
   @Override
   public Class<?> getSerializedClass() { return Object[].class; }
 
-  protected Object[] toValues(Object obj) {
+  private Object[] toValues(Object obj) {
     Object[] o = (Object[]) obj;
     if (o.length != fields.length)
       throw new IndexOutOfBoundsException("Expected " + fields.length 
@@ -76,13 +83,31 @@ public class StructRowKey extends RowKey
     return o;
   }
 
+  /** Initializes mustTerminate in each field row key for the 
+   * specified field values. As a side effect of this computation, the 
+   * serialized length of the object is computed.
+   * @param o field values 
+   * @return the serialized length of the field values
+   */
+  private int setTerminateAndGetLength(Object[] o) throws IOException {
+    int len = 0;
+    boolean fieldTerm = mustTerminate;
+
+    for (int i = o.length - 1; i >= 0; i--) {
+      fields[i].setMustTerminate(fieldTerm);
+      int objLen = fields[i].getSerializedLength(o[i]);
+      if (objLen > 0) {
+        fieldTerm = true;
+        len += objLen;
+      }
+    }
+
+    return len;
+  }
+
   @Override
   public int getSerializedLength(Object obj) throws IOException {
-    Object[] o = toValues(obj);
-    int len = 0;
-    for (int i = 0; i < o.length; i++)
-      len += fields[i].getSerializedLength(o[i]);
-    return len;
+    return setTerminateAndGetLength(toValues(obj));
   }
 
   @Override
@@ -90,6 +115,7 @@ public class StructRowKey extends RowKey
     throws IOException
   {
     Object[] o = toValues(obj);
+    setTerminateAndGetLength(o);
     for (int i = 0; i < o.length; i++)
       fields[i].serialize(o[i], w);
   }

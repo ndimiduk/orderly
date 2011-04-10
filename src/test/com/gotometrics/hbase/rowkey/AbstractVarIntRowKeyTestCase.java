@@ -35,8 +35,7 @@ public abstract class AbstractVarIntRowKeyTestCase extends RandomRowKeyTestCase
     reservedBits = r.nextInt(vi.getMaxReservedBits());
     reservedValue = r.nextInt(1 << reservedBits);
     return vi.setReservedBits(reservedBits)
-             .setReservedValue(reservedValue)
-             .setOrder(r.nextBoolean() ? Order.ASCENDING : Order.DESCENDING);
+             .setReservedValue(reservedValue);
   }
 
   protected void verifyReserved(ImmutableBytesWritable w) {
@@ -52,7 +51,8 @@ public abstract class AbstractVarIntRowKeyTestCase extends RandomRowKeyTestCase
     throws IOException 
   {
     super.testSerialization(o, w);
-    verifyReserved(w);
+    if (o != null || vi.terminate())
+      verifyReserved(w);
   }
 
   @Override
@@ -60,7 +60,8 @@ public abstract class AbstractVarIntRowKeyTestCase extends RandomRowKeyTestCase
     throws IOException
   {
     super.testSkip(o, w);
-    verifyReserved(w);
+    if (o != null || vi.terminate())
+      verifyReserved(w);
   }
 
   @Override
@@ -68,8 +69,10 @@ public abstract class AbstractVarIntRowKeyTestCase extends RandomRowKeyTestCase
       ImmutableBytesWritable w2) throws IOException
   {
     super.testSort(o1, w1, o2, w2);
-    verifyReserved(w1);
-    verifyReserved(w2);
+    if (o1 != null || vi.terminate())
+      verifyReserved(w1);
+    if (o2 != null || vi.terminate())
+      verifyReserved(w2);
   }
 
   @Override

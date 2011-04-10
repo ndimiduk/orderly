@@ -33,6 +33,6 @@ public class TestLazyBigDecimalRowKey extends TestBigDecimalRowKey
       public Object deserialize(ImmutableBytesWritable w) throws IOException {
         return getBigDecimal((ImmutableBytesWritable)super.deserialize(w));
       }
-    }.setOrder(r.nextBoolean() ? Order.ASCENDING : Order.DESCENDING);
+    };
   }
 }

@@ -63,7 +63,8 @@ public class UTF8RowKey extends RowKey
 
   @Override
   public int getSerializedLength(Object o) throws IOException {
-    return o == null ? 1 : ((byte[])o).length + 1;
+    int term = terminate() ? 1 : 0;
+    return o == null ? term : Math.max(((byte[])o).length + term, 1);
   }
 
   @Override
@@ -74,8 +75,10 @@ public class UTF8RowKey extends RowKey
     int offset = w.getOffset();
 
     if (o == null) {
-      b[offset] = mask(NULL);
-      RowKeyUtils.seek(w, 1);
+      if (terminate()) {
+        b[offset] = mask(NULL);
+        RowKeyUtils.seek(w, 1);
+      }
       return;
     }
 
@@ -84,19 +87,26 @@ public class UTF8RowKey extends RowKey
 
     for (int i = 0; i < len; i++)
       b[offset + i] = mask((byte)(s[i] + 2));
-    b[offset + len] = mask(TERMINATOR);
-    RowKeyUtils.seek(w, len + 1);
+
+    boolean terminated = terminate() || len == 0;
+    if (terminated)
+      b[offset + len] = mask(TERMINATOR);
+    RowKeyUtils.seek(w, len + (terminated ? 1 : 0));
   }
 
   protected int getUTF8RowKeyLength(ImmutableBytesWritable w) {
     byte[] b = w.get();
-    int offset = w.getOffset();
+    int offset = w.getOffset(),
+        len = w.getLength();
 
+    if (len <= 0)
+      return 0;
     if (b[offset] == mask(NULL))
       return 1;
 
-    while (b[offset++] != mask(TERMINATOR)) ;
-    return offset - w.getOffset();
+    int i = 0;
+    while (i < len && b[offset + i++] != mask(TERMINATOR)) ;
+    return i;
   }
 
   @Override
@@ -106,17 +116,20 @@ public class UTF8RowKey extends RowKey
 
   @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException {
-    int len = getUTF8RowKeyLength(w);
+    byte[] s = w.get();
+    int offset = w.getOffset();
+    if (w.getLength() <= 0)
+      return null;
 
+    int len = getUTF8RowKeyLength(w);
     try {
-      int offset = w.getOffset();
-      byte[] s = w.get();
       if (s[offset] == mask(NULL))
         return null;
       if (s[offset] == mask(TERMINATOR))
         return RowKeyUtils.EMPTY;
 
-      byte[] b = new byte[len - 1];
+      boolean terminated = s[offset + len - 1] == mask(TERMINATOR);
+      byte[] b = new byte[len - (terminated ? 1 : 0)];
       for (int i = 0; i < b.length; i++)
         b[i] = (byte) (mask(s[offset + i]) - 2);
       return b;

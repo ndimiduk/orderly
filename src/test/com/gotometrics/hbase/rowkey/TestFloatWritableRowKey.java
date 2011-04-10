@@ -20,10 +20,7 @@ import org.apache.hadoop.io.FloatWritable;
 public class TestFloatWritableRowKey extends RandomRowKeyTestCase
 {
   @Override
-  public RowKey createRowKey() {
-    return new FloatWritableRowKey().setOrder(r.nextBoolean() ? 
-        Order.ASCENDING : Order.DESCENDING);
-  }
+  public RowKey createRowKey() { return new FloatWritableRowKey(); }
 
   @Override
   public Object createObject() {
