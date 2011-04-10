@@ -61,7 +61,8 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
 
   @Override
   public ImmutableBytesWritable allocateBuffer(Object o) throws IOException {
-    return new RedZoneImmutableBytesWritable(key.getSerializedLength(o));
+    return new RedZoneImmutableBytesWritable(key.getSerializedLength(o),
+        key.mustTerminate());
   }
 
   @Override
@@ -143,9 +144,19 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   public void testSort(Object o1, ImmutableBytesWritable w1, Object o2, 
       ImmutableBytesWritable w2) throws IOException
   {
-    super.testSort(o1, w1, o2, w2);
-    ((RedZoneImmutableBytesWritable)w1).verify();
-    ((RedZoneImmutableBytesWritable)w2).verify();
+    RedZoneImmutableBytesWritable r1 = (RedZoneImmutableBytesWritable) w1,
+                                  r2 = (RedZoneImmutableBytesWritable) w2;
+    int r1Length = r1.getLength(),
+        r2Length = r2.getLength();
+    r1.set(r1.get(), r1.getOffset(), r1.getBufferLength());
+    r2.set(r2.get(), r2.getOffset(), r2.getBufferLength());
+
+    super.testSort(o1, r1, o2, r2);
+
+    r1.set(r1.get(), r1.getOffset(), r1Length);
+    r1.verify();
+    r2.set(r2.get(), r2.getOffset(), r2Length);
+    r2.verify();
   }
     
   @Test
@@ -170,7 +181,9 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
 
     public RedZoneImmutableBytesWritable() { }
 
-    public RedZoneImmutableBytesWritable(int len) { reset(len); }
+    public RedZoneImmutableBytesWritable(int len, boolean includeTrailer) { 
+      reset(len, includeTrailer); 
+    }
 
     private void randomize(byte[] b, int offset, int len) {
       for (int i = offset; i < len; i++)
@@ -181,7 +194,9 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
       randomize(b, 0, b.length);
     }
 
-    public RedZoneImmutableBytesWritable reset(int len) {
+    public RedZoneImmutableBytesWritable reset(int len, boolean includeTrailer)
+    {
+      this.buflen = len;
       if (maxRedZone > 0) {
         header = new byte[r.nextInt(maxRedZone)];
         trailer = new byte[r.nextInt(maxRedZone)];
@@ -197,10 +212,13 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
       System.arraycopy(trailer, 0, b, header.length + len, trailer.length);
       randomize(b, header.length, len);
 
+      if (includeTrailer && trailer.length > 0)
+        len += r.nextInt(trailer.length);
       set(b, header.length, len);
-      this.buflen = len;
       return this;
     }
+
+    public int getBufferLength() { return buflen; }
 
     private void verifyEquals(byte[] a, int aOffset, byte[] b, 
         int bOffset, int len) 
