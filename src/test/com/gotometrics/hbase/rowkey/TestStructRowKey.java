@@ -15,8 +15,11 @@
 
 package com.gotometrics.hbase.rowkey;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 import org.junit.After;
 import org.junit.Before;
@@ -132,6 +135,29 @@ public class TestStructRowKey extends RandomRowKeyTestCase
     Object[] o = new Object[fieldTests.length];
     for (int i = 0; i < o.length; i++)
       o[i] = fieldTests[i].createObject();
+    return o;
+  }
+
+  @Override
+  public void serialize(Object o, ImmutableBytesWritable w) throws IOException
+  {
+    if (r.nextInt(64) != 0) 
+      super.serialize(o, w);
+    else
+      ((StructRowKey)key).serialize(w, (Object[]) o);
+  }
+
+  @Override
+  public Object deserialize(ImmutableBytesWritable w) throws IOException 
+  {
+    if (r.nextInt(64) != 0) 
+      return super.deserialize(w);
+
+    Object[] o = new Object[fieldTests.length];
+    StructIterator iter = ((StructRowKey)key).iterate(w);
+
+    int pos = 0;
+    while (iter.hasNext()) o[pos++] = iter.next(); 
     return o;
   }
 

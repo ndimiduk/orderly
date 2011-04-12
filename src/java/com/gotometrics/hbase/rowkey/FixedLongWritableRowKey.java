@@ -21,23 +21,30 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serialize and deserialize LongWritables into HBase row keys.
- * Longs are encoded in a 64-bit fixed-width sortable byte format. 
- * Serialization is performed by inverting the sign bit and writing the
- * resulting bytes to the byte array in big endian order.
+/** Serializes and deserializes LongWritables into a sortable 
+ * fixed-length byte array representation.
  *
- * <h1> NULL </h1>
+ * <p>This format ensures that all longs sort in their natural order, as
+ * they would sort when using signed longs comparison.</p>
+ *
+ * <h1>Serialization Format</h1>
+ * All longs are serialized to an 8-byte, fixed-width sortable byte format.
+ * Serialization is performed by inverting the long sign bit and writing the
+ * resulting bytes to the byte array in big endian order. 
+ *
+ * <h1>NULL</h1>
  * Like all fixed-width integer types, this class does <i>NOT</i> support null
  * value types. If you need null support use @{link LongWritableRowKey}.
  *
- * <h1> Descending sort </h1>
+ * <h1>Descending sort</h1>
  * To sort in descending order we perform the same encodings as in ascending 
  * sort, except we logically invert (take the 1's complement of) each byte. 
  *
- * <h1> Usage </h1>
+ * <h1>Usage</h1>
  * This is the fastest class for storing fixed width 64-bit ints. Use 
  * @{link LongWritableRowKey} for a more compact, variable-length representation
- * if integers are likely to fit into 59 bits (including the sign bit). 
+ * in almost all cases. This format is only more compact if longs most
+ * frequently require 59 or more bits to store (including the sign bit).
  */
 public class FixedLongWritableRowKey extends RowKey 
 {

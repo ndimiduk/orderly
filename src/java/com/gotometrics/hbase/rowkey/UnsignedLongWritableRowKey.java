@@ -22,74 +22,85 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serialize and deserialize unsigned long integers into a variable-length
- * sortable byte array representation. The basic idea is to only encode those 
- * bits that have values differing from the (implicit, zero-value) sign bit. 
- * <p>
- * Our encoding consists of a header byte followed by 0-8 data bytes. The data
- * bytes are packed 8-bit data values in big-endian order. The header byte
- * contains the the number of data bytes and the 3-7 most significant
- * bits of data.
- * <p>
- * In the case of single byte encodings, the header byte contains 7 bits of
- * data. For double byte encodings, the header byte contains 6 bits of data, 
- * and for all other lengths the header byte contains 3 bits of data.
- * <p>
- * Thus we encode all numbers using the 2<sup>H+D</sup> data bits, where H is 
- * the number of data bits in the header byte and D is the number of data bits 
- * in the data bytes (D = number of data bytes &times; 8). 
- * <p>
- * More specifically, the numerical ranges for our variable-length byte 
+/** Serialize and deserialize unsigned long integers into a variable-length 
+ * sortable byte format. 
+ *
+ * <p>This format ensures that serialized values will sort in their natural 
+ * sort order, as determined by (unsigned) long integer comparison. NULL
+ * values compare less than any non-NULL value. Although we are serializing
+ * and deserializing values with a java long, we treat the most significant bit
+ * of the long as a data bit, not a sign bit, because this is an unsigned data
+ * serialization format.</p>
+ *
+ * <h1>Serialization Format</h1>
+ * This variable-length format is a subclass of @{link AbstractVarIntRowKey}.
+ * The JavaDoc page for the parent class describes the high-level design of the
+ * general serialization format. The basic idea is to only encode only those 
+ * bits that have values differing from the implicit zero-valued sign bit
+ * (all unsigned integers effectictively have an implied sign bit of zero).
+ * 
+ * <p>Our encoding consists of a header byte followed by 0-8 data bytes. The 
+ * data bytes are packed 8-bit data values in big-endian order. The header byte
+ * contains the number of serialized data bytes, and the 3-7 most significant
+ * bits of data.</p>
+ * 
+ * <p>The header byte contains both header fields (byte length) and data. Some
+ * header length fields may be omitted in shorter-length encodings, so smaller 
+ * encodings contain more data bits in the header. In the case of single-byte 
+ * encodings, the header byte contains 7 bits of data. For double-byte 
+ * encodings, the header byte contains contains and 6 bits of data. All other 
+ * encoding lengths contain 3 bits of data.</p>
+ *
+ * <p>Thus we encode all numbers using the 2<sup>H+D</sup> data bits,
+ * where H is the number of data bits in the header byte and D is the number of
+ * data bits in the data bytes (D = number of data bytes &times; 8).</p>
+ * 
+ * <p>More specifically, the numerical ranges for our variable-length byte 
  * encoding are:
  * <ul>
- *   <li> One byte: -128 &le; x &le; 128
+ *   <li> One byte: -128 &le; x &le; 127
  *   <li> Two bytes: -16384 &le; x &le; 16383
  *   <li> N &gt; 2 bytes: -2<sup>8 &times; (N-1) + 3</sup> &le; x 
  *        &le; 2<sup>8 &times; (N-1) + 3</sup> - 1
  * </ul>
- * We support all values that can be represented in a java Long (treating the
- * sign bit as just another data bit), so N &le; 9.
+ * We support all values that can be represented in a java Long, so N &le; 9.
+ * </p>
  *
- * <h1> Reserved Bits </h1>
- *
+ * <h2> Reserved Bits </h2>
  * Up to three of the most significant bits in the header may be reserved for 
  * use by the application, as three is the minimum number of data bits in the 
  * header byte. Reserved bits decrease the amount of data stored in the header 
  * byte. For example, a single byte encoding with two reserved bits can only 
  * encode integers in the range -32 &le; x &le; 31.
  *
- * <h1> Header Format </h1>
- * Given an integer, x, the full format of the header byte is 
- * <ul>
- *   <li>Bit 6: NOT single-byte encoded 
- *   <li>Bit 5: NOT double-byte encoded 
- *   <li>Bit 3-5: len 
- * </ul>
+ * <h2> Full Header Format </h2>
+ * The full format of the header byte is (note: ~ represents logical negation)
+ * <pre>
+ * Bit 7:    ~single-byte encoded 
+ * Bit 6:    ~double-byte encoded 
+ * Bits 3-5: len 
+ * </pre>
  *
- * Bits 7 is used in all encodings. If bit 7 indicates a single byte
- * encoding, then bits 0-6 are all data bits. Otherwise, bit 6 is used to
- * indicate a double byte encoding. If double byte encoding is specified, then 
+ * <p>Bit 7 is used in all encodings. If bit 7 indicates a single byte
+ * encodng, then bits 0-6 are all data bits. Otherwise, bit 6 is used to
+ * indicate a double byte encoding. If a double byte encoding is used, then 
  * bits 0-5 are data bits. Otherwise, bits 3-5 specify the length of the 
- * extended length (&gt; 2 byte) encoding, with a +3 bias as described below. 
- * In all cases, bits 0-2 are data bits.
- * <p>
- * The len field represents the length of the encoded byte array minus 3.
+ * extended length (&gt; 2 byte) encoding. In all cases, bits 0-2 are data bits.
+ * </p>
+ * 
+ * <p>The len field represents the (extended) length of the encoded byte array 
+ * minus 3, as all extended length serializations must be at least 3 bytes long.
  * In other words, the encoded len field has a bias of +3, so an encoded
- * field with value 1 represents a length of 4 when decoded.
- * <p>
- * Any trailing bits that are unused are padded with the sign bit of zero. The 
- * worst case space overhead of this serialization format versus a standard 
- * fixed-length encoding is 1 additional byte.
- * <p>
- * All header bytes are incremented by one after applying the above operations.
- * This is done because the value 0x00 is reserved for NULL. An increment by one 
- * guarantees that NULL will be less than any valid integer header because 
- * 0xFF is a not a valid integer header and thus the increment will not result 
- * in arithmetic overflow.
- * <p>
- * Note that if reserved bits are present, the above 
- * header values will be shifted right logically by the number of reserved 
- * bits.
+ * field with value 1 represents a length of 4 bytes when decoded.</p>
+ * 
+ * <p>Any padding is done with a clear (zero) bit. The worst case space overhead
+ * of this serialization format versus a standard fixed-length encoding is 1 
+ * additional byte. Note that if reserved bits are present, the above header 
+ * layout is shifted right by the number of reserved bits.</p>
+ *
+ * <h1> Usage </h1>
+ * This is the fastest class for storing unsigned long integers. It performs no
+ * copies during serialization and deserialization, 
  */
 public class UnsignedLongWritableRowKey extends AbstractVarIntRowKey
 {

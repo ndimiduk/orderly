@@ -20,23 +20,30 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serialize and deserialize UTF-8 byte arrays into HBase row keys.
- * Most of the work is done for us because sorting byte arrays of UTF-8 encoded 
- * characters is equivalent to sorting the equivalent decoded Unicode strings by
- * Unicode code point. This is discussed further in the 
+/** Serialize and deserialize UTF-8 byte arrays into a sortable byte array
+ * representation.
+ *
+ * <p>This format sorts strings in lexicographic order. The sort order ensures 
+ * that NULL &lt; empty string &lt; Character.MIN_CODE_POINT &lt; aa &lt; aaa 
+ * &lt; b &lt; ba &lt; bb &lt; ... &lt; Character.MAX_CODE_POINT &lt; ...</p>
+ *
+ * <h1>Serialization Format</h1>
+ * <p>The UTF-8 format already gurantees that sorting byte arrays of UTF-8 
+ * encoded characters is equivalent to sorting the equivalent decoded Unicode 
+ * strings by Unicode code point. This is discussed further in the 
  * <a href="http://en.wikipedia.org/wiki/UTF-8"> UTF-8 Wikipedia article</a>.
  * As a historical aside, this nifty and very useful property of UTF-8 is due to
  * Ken Thompson and Rob Pike of Unix fame. UTF-8 has many other awesome 
- * properties, like being fully self-synchronized.
+ * properties, like being fully self-synchronized.</p>
  *
- * Unfortunately, we cannot just use raw UTF-8 bytes -- we also need to 
- * encode NULL, as well as a string terminator to indicate the end of the 
- * string. When sorting, we must ensure that NULL &lt; terminator &lt; any valid
+ * <p>However, we also need to encode NULL and an end of string terminator.
+ * When sorting, we must ensure that NULL &lt; terminator &lt; any valid
  * UTF-8 byte so that strings sort in the correct order. Fortunately, a simple 
  * solution is available to us for encoding NULL and terminator bytes. UTF-8 
- * encoding will never produce the byte values 0xff or 0xfe. Thus, we may reserve 
- * <b>0x00</b> for NULL and <b>0x01</b> for terminator if we add 2 to each 
- * UTF-8 byte when encoding the UTF-8 byte array. 
+ * encoding will never produce the byte values <code>0xff</code> or 
+ * <code>0xfe</code>. Thus, we may reserve <code>0x00</code> for NULL and 
+ * <code>0x01<code> for terminator if we add 2 to each UTF-8 byte when 
+ * serializing the UTF-8 byte array.</p>
  *
  * To encode a NULL, we output 0x0 and return. Otherwise, to encode a non-NULL
  * UTF-8 byte array we add 2 to each of the raw utf-8 bytes and then append the
@@ -48,10 +55,17 @@ import org.apache.hadoop.hbase.util.Bytes;
  * sort, except we logically invert (take the 1's complement of) each byte, 
  * including the null and termination bytes. 
  *
+ * <h1> Implicit Termination </h1>
+ * If @{link mustTerminate} is false and the sort order is ascending, we 
+ * encode NULL values as a zero-length byte array, and omit the terminator byte
+ * for every string except the empty string. In this case, our format has zero
+ * bytes of overhead versus encoding the raw UTF-8 bytes. The end of the byte 
+ * array serves as an implicit terminator byte. Implicit termination is 
+ * discussed further in @link{RowKey}.
+ *
  * <h1> Usage </h1>
  * This is the fastest class for storing characters and strings. 
- * It performs the minimum amount of copying during serialization and 
- * deserialization, performing only a single copy each time.
+ * It performs no object copies during serialization or deserialization.
  */
 public class UTF8RowKey extends RowKey 
 {

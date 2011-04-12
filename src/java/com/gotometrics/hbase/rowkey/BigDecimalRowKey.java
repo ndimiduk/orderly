@@ -24,29 +24,34 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serializes @{link BigDecimal} objects into a variable-length
- * sortable byte array representation. 
+/** Serializes and deserializes @{link BigDecimal} objects into a sortable 
+ * byte aray representation.
  *
- * <h1> Overview </h1>
+ * <p>This format ensures that serialized byte values sort in the natural
+ * order of a BigDecimal (as ordered by @{link BigDecimal#compareTo}. NULL
+ * values compare less than any non-NULL value.</p>
+ *
+ * <h1> Serialization Overview </h1>
  * A <code>BigDecimal</code> object is composed of a power of 10 exponent scale 
  * and an unscaled, arbitrary precision integer significand. The value of the 
  * BigDecimal is unscaled base 2 significand &times; 10<sup>scale</sup>. The 
  * significand is an arbitrary precision {@link BigInteger}, while 
  * the scale is a signed 32-bit int.
- * <p>
- * This encoding format converts a canonicalized BigDecimal into an a
+ * 
+ * <p>This encoding format converts a canonicalized BigDecimal into an a
  * power-of-10 adjustec exponent, and an unscaled arbitrary precision base-10 
  * integer significand. As described in {@link BigDecimal#toString}, an 
- * adjusted exponent is equal to the scale + precision - 1, where precision is 
- * the number of digits in the unscaled base 10 significand. 
- * <p>
- * To serialize the BigDecimal, we first serialize the adjusted exponent 
+ * adjusted exponent is equal to the <code>scale + precision - 1</code>, where 
+ * precision is the number of digits in the unscaled base 10 significand 
+ * (with trailing zeroes removed).</p>
+ * 
+ * <p>To serialize the BigDecimal, we first serialize the adjusted exponent 
  * combined with a few leading header bits using a subclass of 
  * @{link IntWritableRowKey} (header bits are packed into the adjusted exponent
  * serialization format using @{link IntWritableRowKey#setReservedValue}). Then
  * we serialize the base 10 significand using a BCD encoding format described 
  * below. The resulting byte array sorts in natural <code>BigDecimal</code> 
- * sort order.
+ * sort order.</p>
  *
  * <h1> Canonicalization </h1>
  * All BigDecimal values first go through canonicalization by stripping any
@@ -62,8 +67,9 @@ import org.apache.hadoop.hbase.util.Bytes;
  * binary representations. We perform the base 10 conversion on the significand
  * using {@link BigInteger.toString(10)}.  We remove the leading '-' if the 
  * significand value is negative, and encode the resulting decimal String into 
- * bytes using the Binary Coded Decimal format described below. The sign bit of
- * the unscaled value is encoded into the header byte, as described in the 
+ * bytes using the Binary Coded Decimal format described below. We ignore the
+ * significand sign bit when computing the BCD serialization because 
+ * the significant sign bit is encoded into the header byte, as described in the
  * Header section.
  *
  * <h1> Zero Nibble Terminated Binary Coded Decimals </h1>
@@ -74,32 +80,33 @@ import org.apache.hadoop.hbase.util.Bytes;
  * of the BCD encoded string. This ensures that shorter strings that are the 
  * prefix of a longer string will always compare less than the longer string, as
  * the terminator is a smaller value that any decimal digit.
- * <p>
- * The BCD encoding requires an extra byte of space for the terminator 
- * only if there are an even number of characters. An odd-length string does not
- * use the least significant nibble of its last byte, and thus can store the
- * null terminator nibble without requiring any additional bytes.
+ * 
+ * <p>The BCD encoding requires an extra byte of space for the terminator 
+ * only if there are an even number of characters (and implicit termination is
+ * not allowed). An odd-length string does not use the least significant nibble
+ * of its last byte, and thus can store a zero terminator nibble without 
+ * requiring any additional bytes.</p>
  *
  * <h1> Exponent </h1>
- * The adjusted exponent is defined as scale + precision - 1, where precision is
- * equal to the number of the digits in the base 10 unscaled significand. We
- * translate the adjusted exponent into a variable-length byte array using 
- * a subclass of {@link IntWritableRowKey}, with two reserved bits used to 
- * encode header information. 
- * <p>
- * The adjusted exponent is the sum of two 32-bit integers minus one, which
+ * The adjusted exponent is defined as <code>scale + precision - 1</code>, where
+ * precision is equal to the number of the digits in the base 10 unscaled 
+ * significand. We translate the adjusted exponent into a variable-length byte 
+ * array using a subclass of {@link IntWritableRowKey}, with two reserved bits 
+ * used to encode header information. 
+ * 
+ * <p>The adjusted exponent is the sum of two 32-bit integers minus one, which
  * requires 33 bits of storage in the worst case. Given two reserved bits, the 
  * IntWritable row key format can serialize integers with up to 33 data 
  * bits, not including the sign bit. However, this format truncates all values 
- * in memory to fit into a 32-bit integer.
- * <p>
- * To use the more efficient serialization format employed by 
+ * in memory to fit into a 32-bit integer.</p>
+ * 
+ * <p>To use the more efficient serialization format employed by 
  * <code>IntWritable</code> while avoiding 32-bit truncation, This class 
  * subclasses <code>IntWritableRowKey</code> to use <code>LongWritable</code> 
  * rather than <code>IntWritable</code> objects for storing values in memory. 
  * The byte serialization format remains unchanged (and is slightly more 
  * efficient for 33-bit objects than the format employed by 
- * @{link LongWritableRowKey}).
+ * @{link LongWritableRowKey}).</p>
  *
  * <h1> Header </h1>
  * The header encodes the type of the BigDecimal: null, negative, zero, or
@@ -112,11 +119,11 @@ import org.apache.hadoop.hbase.util.Bytes;
  * significand. For positive or negative BigDecimals, the adjusted exponent and 
  * significand are always present, and the significand is serialized after the
  * adjusted exponent.
- * <p>
- * If the header is negative, then all other serialized bits except for the
+ * 
+ * <p>If the header is negative, then all other serialized bits except for the
  * two-bit header are logically inverted. This is to preserve sort order, as 
  * negative numbers with larger exponents or significands should compare less
- * than negative numbers with smaller exponents or significands.
+ * than negative numbers with smaller exponents or significands.</p>
  *
  * <h1> Descending sort </h1>
  * To sort in descending order we perform the same encodings as in ascending 
@@ -124,6 +131,13 @@ import org.apache.hadoop.hbase.util.Bytes;
  * serialized bytes, including the header bits in the adjusted exponent. We 
  * perform this negation on all serialized bytes even if we have already 
  * negated bytes once due to a negative header value.
+ *
+ * <h1> Implicit Termination </h1>
+ * If @{link mustTerminate} is false and the sort order is ascending, we 
+ * encode NULL values as a zero-length byte array instead of the format
+ * specified above. We also omit the trailing terminator byte in our BCD
+ * representation (which is only required for even-length BCD serializations
+ * anyway). Implicit termination is discussed further in @link{RowKey}.
  *
  * <h1> Usage </h1>
  * This is the second fastest class for storing <code>BigDecimal</code> objects.

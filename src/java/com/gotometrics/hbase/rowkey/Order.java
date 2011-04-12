@@ -23,16 +23,13 @@ public enum Order
 
   private final byte mask;
 
-  Order(byte mask) {
-    this.mask = mask;
-  }
+  Order(byte mask) { this.mask = mask; }
 
-  /** Returns the byte mask associated with the sort order. When a byte in 
-   * ascending order is XOR'd with the mask, the result is the same byte 
-   * but sorted in the direction specified by the Order object. This mask is 
-   * used by {@link RowKey} classes when serializing an object to its byte array
-   * representation. 
+  /** Gets the byte mask associated with the sort order. When a 
+   * serialized byte is XOR'd with the mask, the result is the same byte 
+   * but sorted in the direction specified by the Order object. 
+   * @see RowKey#serialize
    */
-  public byte mask() { return mask; }
+  byte mask() { return mask; }
 
-};
+}

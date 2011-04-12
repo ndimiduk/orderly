@@ -20,17 +20,19 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serialize and deserialize Unsigned Int Objects into a variable-length
- * sortable byte array representation. The serialization and deserialization 
- * method are identical to {@link UnsignedIntWritableRowKey} after converting 
- * the IntWritable to/from an Integer.
+/** Serializes and deserializes Unsigned Integer objects into a variable-length
+ * sortable byte aray representation.
+ * 
+ * <p>The serialization and deserialization methods are identical to 
+ * {@link UnsignedIntWritableRowKey} after converting the IntWritable to/from 
+ * an Integer</p>.
  *
  * <h1> Usage </h1>
  * This is the slower class for storing unsigned ints. No copies are made 
  * when serializing and deserializing, but unfortunately Integer objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive ints are first passed to 
- * {#Integer.valueOf}, so boxed Integer values may be shared if the 
+ * {@link Integer#valueOf}, so boxed Integer values may be shared if the 
  * <code>valueOf</code> method has frequent cache hits.
  */
 public class UnsignedIntegerRowKey extends UnsignedIntWritableRowKey 

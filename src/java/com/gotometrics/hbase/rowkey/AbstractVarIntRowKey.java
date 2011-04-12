@@ -21,58 +21,66 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serializes and deserializes various integer types into HBase row keys using 
- * an efficient, variable-length integer serialization format.
+/** Serializes and deserializes various integer types a sortable, 
+ * variable-length  byte array.
+ *
+ * <p>Integers, signed or unsigned, are sorted in their natural order. 
  * The serialization format is designed to succinctly represent small absolute 
  * values (i.e. -2 or 4), as these values are the most freqently encountered.
- * <p>
- * Furthermore, this format preserves sort order when using a byte array
- * comparator. This requirement is what causes our design
- * to differ significantly from the conventional variable-length integer
- * encodings, such as Base-128 or Zig-Zag encodings.
- * <p>
- * The basic idea is to omit all leading bits that are equal to the 
- * sign bit. This means we have a compact representation for
- * values like -1 and +1, but require more bits for values such as 
+ * Our design is similar in goals to Zig-Zag variable-length integer encoding,
+ * but we also ensure that the serialized bytes sort in natural integer sort
+ * order.</p>
+ *
+ * <h1>Serialization Format</h1>
+ * Variable-length integers omit all leading bits that are equal to the 
+ * sign bit. This means we have a compact, single-byte representation for
+ * values like -1 and +1, but require more bytes to serialize values such as 
  * +2^30 and -2^30. 
- * <p>
- * This abstract class performs serializations to/from a 64-bit long. The
+ * 
+ * <p>This abstract class performs serializations to/from a 64-bit long. The
  * encoding uses a header byte followed by 0-8 data bytes. Each data byte is
- * a byte from the serialized integer, and data bytes are written in big endian
- * order. The header byte format consists of implicit or explicit sign bit, type
- * fields indicating the length of the serialized integer in bytes, and the most
- * significant bits of the serialized integer data.
- * <p>
- * Operations for setting/getting the header sign bit and type length, as well
- * as manipulating Writable objects, are deferred to subclasses. This 
+ * a byte from the serialized integer (in big endian order). The header byte 
+ * format consists of implicit or explicit sign bit, a type field (or fields)
+ * ndicating the length of the serialized integer in bytes, and the most 
+ * significant bits of the serialized integer data.</p>
+ * 
+ * <p>Operations for setting/getting the header sign bit and type fields, as 
+ * well as manipulating Writable objects, are deferred to subclasses. This 
  * design allows subclasses to choose different integer widths as well as 
  * different signedness properties. For example, unsigned integers may be 
  * implemented by treating all integers as having an implicit sign bit set to 
  * zero. Each subclass has a JavaDoc with the full description of the header
- * format used by that particular subclass.
+ * format used by that particular subclass.</p>
  * 
- * <h1> Reserved Bits </h1>
+ * <h1>Reserved Bits</h1>
  * Clients may reserve the most significant bits in the header byte for their 
  * own use. If there are R reservedBits, then the most significant R bits of the 
  * header byte are reserved exclusively for the client and will be initialized 
  * to the client-specified reserved value (default 0) during serialization. The
  * remaining 8-R bits store the header information. Subclasses specify the 
- * maximum number of reserved bits allowed - typical maximums are 2-3 bits.
- * <p>
- * Reserved bits are often used to efficently embed variable-length integers 
+ * maximum number of reserved bits allowed, and typical maximums are 2-3 bits.
+ * 
+ * <p>Reserved bits are often used to efficently embed variable-length integers 
  * within more complex serialized data structures while preserving sort 
  * ordering. For example, the {@link BigDecimalRowKey} class uses two reserved
  * bits to efficiently embed a variable-length integer exponent within a 
- * serialized BigDecimal object.
+ * serialized BigDecimal object.</p>
  *
- e <h1> Descending sort </h1>
+ * <h1>NULL</h1>
+ * The header byte value 0x00 is reserved for NULL. Subclasses ensure that this
+ * value is used for the header byte if and only if the serialized value is
+ * NULL.
+ *
+ * <h1>Implicit Termination</h1>
+ * If @{link mustTerminate} is false and the sort order is ascending, we can 
+ * encode NULL values as a zero-length byte array. Otherwise, the header byte
+ * value <code>0x00</code> is used to serialize NULLs. Subclasses ensure this 
+ * header byte is used if and only if the serialized value is NULL.
+ *
+ * <h1>Descending sort</h1>
  * To sort in descending order we perform the same encodings as in ascending 
  * sort, except we logically invert (take the 1's complement of) each byte. 
  * However, any reserved bits in the header byte will not be inverted.
- *
- * <h1> Null </h1>
- * The header byte value 0x00 is reserved for NULL. Subclasses ensure that 
- * this value is used for the header byte if and only if the value is NULL.
  *
  * <h1> Usage </h1>
  * This is the fastest class for storing integers of any width. It performs no

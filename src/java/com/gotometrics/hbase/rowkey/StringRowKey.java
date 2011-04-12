@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * array.
  *
  * <h1> Usage </h1>
- * This is the slowest class for storing characters and strings. Two copies are
+ * This is the slowest class for storing characters and strings. One copy is 
  * made during serialization/deserialization, and furthermore the String
  * objects themselves cannot be re-used across multiple deserializations.
  * Weigh the cost of additional object instantiation

@@ -20,18 +20,20 @@ import java.io.IOException;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serialize and deserialize Double Objects into HBase row keys.
- * The serialization and deserialization method are identical to 
+/** Serializes and deserializes Doubles into a sortable byte aray 
+ * representation.
+ * 
+ * <p>The serialization and deserialization method are identical to 
  * {@link DoubleWritableRowKey} after converting the DoubleWritable to/from a 
- * Double.
+ * Double.</p>
  *
  * <h1> Usage </h1>
  * This is the slower class for storing doubles. No copies are made when 
  * serializing and deserializing, but unfortunately Double objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive doubles are first passed to 
- * {#Double.valueOf}, so boxed Double values may be shared if the 
- * #valueOf method has frequent cache hits.
+ * {link Double#valueOf}, so boxed Double values may be shared if the 
+ * <code>valueOf</code> method has frequent cache hits.
  */
 public class DoubleRowKey extends DoubleWritableRowKey 
 {

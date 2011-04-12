@@ -21,22 +21,17 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 /** Serialize and deserialize unsigned integers into fixed-width, sortable 
- * byte arrays. The serialization and deserialization method are identical to 
- * {@link FixedIntWritableRowKey}, except the sign bit of the integer is not
- * negated before deserialization.
+ * byte arrays. 
  *
- * <h1> NULL </h1>
- * Like all fixed-width integer types, this class does <i>NOT</i> support null
- * value types. If you need null support use @{link UnsignedIntWritableRowKey}.
- *
- * <h1> Descending sort </h1>
- * To sort in descending order we perform the same encodings as in ascending 
- * sort, except we logically invert (take the 1's complement of) each byte. 
+ * <p>The serialization and deserialization method are identical to 
+ * {@link FixedIntWritableRowKey}, except that the sign bit of the integer is 
+ * not negated during serialization.</p>
  *
  * <h1> Usage </h1>
- * This is the fastest class for storing fixed width 32-bit unsigned ints. Use 
+ * This is the fastest class for storing fixed width 32-bit unsigned ints. Use
  * @{link UnsignedIntWritableRowKey} for a more compact, variable-length 
- * representation if integers are likely to fit into 28 bits.
+ * representation. This format is more compact only if integers most 
+ * frequently require 28 bits or more bits to store.
  */
 public class FixedUnsignedIntWritableRowKey extends FixedIntWritableRowKey
 {

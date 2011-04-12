@@ -28,10 +28,10 @@ import org.apache.hadoop.hbase.util.Bytes;
  * array.
  *
  * <h1> Usage </h1>
- * This is the second fastest class for storing characters and strings. Only
- * one copy is made when serializing. Unfortunately, there is no way to
+ * This is the second fastest class for storing characters and strings. No
+ * objetc copies are made when serializing. Unfortunately, there is no way to
  * force a Text object to use an existing byte array without copying its 
- * contents, so two copies are required when deserializing. This class re-uses
+ * contents, so one copy is required when deserializing. This class re-uses
  * Text objects during deserialization, although the byte array
  * backing the Text object is not re-used.
  */

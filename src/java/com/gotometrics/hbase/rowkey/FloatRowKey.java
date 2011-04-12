@@ -20,18 +20,20 @@ import java.io.IOException;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serialize and deserialize Float Objects into HBase row keys.
- * The serialization and deserialization method are identical to 
+/** Serializes and deserializes Floats into a sortable byte aray 
+ * representation.
+ * 
+ * <p>The serialization and deserialization method are identical to 
  * {@link FloatWritableRowKey} after converting the FloatWritable to/from a 
- * Float.
+ * Float.</p>
  *
  * <h1> Usage </h1>
  * This is the slower class for storing floats. No copies are made when 
  * serializing and deserializing, but unfortunately Float objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive floats are first passed to 
- * {#Float.valueOf}, so boxed Float values may be shared if the 
- * #valueOf method has frequent cache hits.
+ * @{link Float#valueOf}, so boxed Float values may be shared if the 
+ * <code>valueOf</code> method has frequent cache hits.
  */
 public class FloatRowKey extends FloatWritableRowKey 
 {

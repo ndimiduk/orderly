@@ -21,23 +21,30 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 
-/** Serialize and deserialize IntWritables into HBase row keys.
- * Integers are encoded in a 32-bit fixed-width sortable byte format. 
- * Serialization is performed by inverting the integer sign bit and writing the
- * resulting bytes to the byte array in big endian order.
+/** Serializes and deserializes IntWritablesWritables into a sortable 
+ * fixed-length byte array representation.
  *
- * <h1> NULL </h1>
+ * <p>This format ensures that all integers sort in their natural order, as
+ * they would sort when using signed integer comparison.</p>
+ *
+ * <h1>Serialization Format</h1>
+ * All Integers are serialized to a 4-byte, fixed-width sortable byte format.
+ * Serialization is performed by inverting the integer sign bit and writing the
+ * resulting bytes to the byte array in big endian order. 
+ *
+ * <h1>NULL</h1>
  * Like all fixed-width integer types, this class does <i>NOT</i> support null
  * value types. If you need null support use @{link IntWritableRowKey}.
  *
- * <h1> Descending sort </h1>
+ * <h1>Descending sort</h1>
  * To sort in descending order we perform the same encodings as in ascending 
  * sort, except we logically invert (take the 1's complement of) each byte. 
  *
- * <h1> Usage </h1>
+ * <h1>Usage</h1>
  * This is the fastest class for storing fixed width 32-bit ints. Use 
  * @{link IntWritableRowKey} for a more compact, variable-length representation
- * if integers are likely to fit into 28 bits (including the sign bit). 
+ * in almost all cases. This format is only more compact if integers most
+ * frequently require 28 or more bits to store (including the sign bit).
  */
 public class FixedIntWritableRowKey extends RowKey 
 {

@@ -29,14 +29,15 @@ public class StructBuilder
     this.order = Order.ASCENDING;
   }
 
-  /** Adds a field to the struct.
+  /** Adds a field row key to the struct definition.
    * @param key field row key to append to the struct definition
    * @return this object
    */
   public StructBuilder add(RowKey key) { fields.add(key); return this; }
 
-  /** Sets a struct field definition to the specified row key.
-   * @param i struct field definition index 
+  /** Sets a struct field to the specified row key. Fields are numbered 
+   * sequentially in the order they are added, starting from 0.
+   * @param i struct field definition index
    * @param field row key assigned to field definition
    * @return this object
    */
@@ -45,7 +46,7 @@ public class StructBuilder
     return this;
   }
 
-  /** Gets the field row key at index i. */
+  /** Gets the field row key at field index i. */
   public RowKey get(int i) { return fields.get(i); }
 
   /** Gets all field row keys. */
@@ -56,6 +57,9 @@ public class StructBuilder
     this.order = order;
     return this;
   }
+
+  /** Gets the sort order of the struct definition. */
+  public Order getOrder() { return order; }
 
   /** Creates a struct row key. */
   public StructRowKey toRowKey() {

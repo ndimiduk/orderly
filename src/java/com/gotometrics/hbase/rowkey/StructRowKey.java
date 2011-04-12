@@ -20,14 +20,58 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 /** Serialize and deserialize a struct (record) row key into a sortable
- * byte array. A struct row key is a composed of a fixed number of fields.
+ * byte array. 
+ *
+ * <p>A struct row key is a composed of a fixed number of fields.
  * Each field is a subclass of @{link RowKey} (and may even be another struct).
  * The struct is sorted by its field values in the order in which the fields 
- * are declared.
- * <p>
- * This is the same general concept as a multi-column primary
- * key or index in MySQL, where the primary key is a struct and the columns are 
- * field row keys. 
+ * are declared.</p>
+ * 
+ * <p>Structs allow for composite row keys. This is similar to a multi-column 
+ * primary key or index in MySQL, where the primary key is a struct and the 
+ * columns are field row keys.</p>
+ *
+ * <h1> Serialization Format </h1>
+ * The struct row key does not serialize any additional bytes beyond those 
+ * used to serialize each of its fields in sequential order. The struct
+ * serializes an array of values by simply serializing the first value using
+ * the first row key, followed by the second value serialized with the second 
+ * row key, and so forth. No bytes are serialized directly by the struct class 
+ * at all, so no additional bytes are inserted before, after, or in between 
+ * values serialized by the field row keys. In all cases except the implicit
+ * termination cases mentioned below, field row keys have @{link mustTerminate}
+ * set to true to force each field row key to be self-terminating.
+ * 
+ * <h1> Implicit and Explicit Termination </h1>
+ * The struct row key does not directly serialize any bytes and thus 
+ * termination flags do not directly affect the serialization. Instead, 
+ * the struct row controls explicit and implicit termination settings by 
+ * manipulating the must terminate flags of the field row keys using
+ * @{link setMustTerminate}. 
+ *
+ * <p>If <code>mustTerminate</code> is true, then the mustTerminate flag is set 
+ * to true in all field row keys. However, if <code>mustTerminate</code>
+ * is false, we can set the must terminate flag to false for any field row key 
+ * that is followed by an uninterrupted trailing suffix of ascending-sorted 
+ * NULL values. This is because NULL values encoded via ascending sort 
+ * are zero-length in all row key formats (assuming <code>mustTerminate</code>
+ * is false). In the extreme, a struct with must terminate set to false and all 
+ * fields in ascending sort order would serialize a set of null objects to a
+ * zero-byte array. All other field row keys (those that are followed by any 
+ * serialized value with non-zero length) will have the must terminate flag set
+ * to true in the field row key.</p>
+ *
+ * <h1> Struct Prefixes </h1>
+ * Given a serialized struct row key, you may deserialize fields from the 
+ * serialized byte representation using any <i>prefix</i> of the struct row 
+ * key. For example, if a struct consisting of a long, string, and float
+ * is serialized, then fields may be deserialized using a row key consisting of 
+ * a long and string, or by using a row key consisting of a single 
+ * long. Any trailing fields omitted from the prefix row key will be ignored
+ * during deserialization. In the above example, the (long, string) row key 
+ * would return a two-element (long object, string object) deserialized result, 
+ * ignoring the trailing serialized float as this was not included in the 
+ * struct prefix's definition.
  *
  * <h1> NULL </h1>
  * Structs themselves may not be NULL. However, struct fields may be NULL 
@@ -40,13 +84,17 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * <h1> Usage </h1>
  * Structs impose no extra space during serialization, or object copy overhead
  * at runtime. The storage and runtime costs of a struct row key are the
- * sum of the costs of each of its field row keys. A struct with zero fields 
- * serializes to a zero-byte array.
+ * sum of the costs of each of its field row keys. 
+ *
+ * @see StructIterator
+ * @see StructBuilder
  */
 public class StructRowKey extends RowKey 
 {
   private RowKey[] fields;
   private Object[] v;
+  private StructIterator iterator;
+  private ImmutableBytesWritable iw;
 
   /** Creates a struct row key object.
    * @param fields - the field row keys of the struct (in declaration order) 
@@ -65,11 +113,16 @@ public class StructRowKey extends RowKey
     return this;
   }
 
+  /** Sets the field row keys.
+   * @param fields the fields of the struct (in declaration order)
+   * @return this object
+   */
   public StructRowKey setFields(RowKey[] fields) {
     this.fields = fields; 
     return this;
   }
 
+  /** Gets the field row keys. */
   public RowKey[] getFields() { return fields; }
 
   @Override
@@ -93,6 +146,9 @@ public class StructRowKey extends RowKey
     int len = 0;
     boolean fieldTerm = mustTerminate;
 
+    /* We must terminate a field f if (i) mustTerminate is true for this
+     * struct or (ii) any field after f has a non-zero deserialized length
+     */
     for (int i = o.length - 1; i >= 0; i--) {
       fields[i].setMustTerminate(fieldTerm);
       int objLen = fields[i].getSerializedLength(o[i]);
@@ -120,6 +176,17 @@ public class StructRowKey extends RowKey
       fields[i].serialize(o[i], w);
   }
 
+  /** Serializes a struct row key by specifying its values using a variable
+   * argument list. Each object value corresponds to its equivalent field row 
+   * key, in declaration order (so the first object specifies a value for field row
+   * key 0, the second for field row key 1, and so forth).
+   */
+  public void serialize(ImmutableBytesWritable w, Object... objs) 
+    throws IOException
+  {
+    serialize((Object[])objs, w);
+  }
+
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
     for (int i = 0; i < fields.length; i++)
@@ -134,4 +201,26 @@ public class StructRowKey extends RowKey
       v[i] = fields[i].deserialize(w);
     return v;
   }
+
+  /** Iterates over a serialized row key. Re-uses the same iterator object
+   * across method calls.
+   * @see StructIterator
+   * @param w serialized row key bytes
+   * @return an iterator for w
+   */
+  public StructIterator iterate(ImmutableBytesWritable w) {
+    if (iterator == null)
+      iterator = new StructIterator(this);
+    iterator.setBytes(w);
+    return iterator;
+  }
+
+  public StructIterator iterate(byte[] b, int offset) {
+    if (iw == null)
+      iw = new ImmutableBytesWritable();
+    iw.set(b, offset, b.length - offset);
+    return iterate(iw);
+  }
+
+  public StructIterator iterate(byte[] b) { return iterate(b, 0); }
 }

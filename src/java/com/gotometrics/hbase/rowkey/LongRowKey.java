@@ -20,17 +20,19 @@ import java.io.IOException;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serialize and deserialize Long Objects into HBase row keys.
- * The serialization and deserialization method are identical to 
+/** Serializes and deserializes Long objects into a variable-length
+ * sortable byte aray representation.
+ *
+ * <p>The serialization and deserialization method are identical to 
  * {@link LongWritableRowKey} after converting the LongWritable to/from a
- * Long.
+ * Long.</p>
  *
  * <h1> Usage </h1>
  * This is the slower class for storing longs. No copies are made when 
  * serializing and deserializing. Unfortunately Long objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive longs are first passed to 
- * {#Long.valueOf}, so boxed Long values may be shared, reducing the 
+ * {@link Long#valueOf}, so boxed Long values may be shared, reducing the 
  * copies on deserialization, if the <code>valueOf</code> method has frequent 
  * cache hits.
  */

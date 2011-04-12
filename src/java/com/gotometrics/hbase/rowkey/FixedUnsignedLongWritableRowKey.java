@@ -21,22 +21,17 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 /** Serialize and deserialize unsigned long integers into fixed-width, sortable 
- * byte arrays. The serialization and deserialization method are identical to 
+ * byte arrays. 
+ *
+ * <p>The serialization and deserialization method are identical to 
  * {@link FixedLongWritableRowKey}, except the sign bit of the long is not
- * negated before deserialization.
- *
- * <h1> NULL </h1>
- * Like all fixed-width integer types, this class does <i>NOT</i> support null
- * value types. If you need null support use @{link UnsignedLongWritableRowKey}.
- *
- * <h1> Descending sort </h1>
- * To sort in descending order we perform the same encodings as in ascending 
- * sort, except we logically invert (take the 1's complement of) each byte. 
+ * negated during serialization.</p>
  *
  * <h1> Usage </h1>
  * This is the fastest class for storing fixed width 64-bit unsigned ints. Use 
  * @{link UnsignedLongWritableRowKey} for a more compact, variable-length 
- * representation if integers are likely to fit into 59 bits.
+ * representation. This format is more compact only if integers most frequently
+ * require 59 or more bits to store.
  */
 public class FixedUnsignedLongWritableRowKey extends FixedLongWritableRowKey
 {

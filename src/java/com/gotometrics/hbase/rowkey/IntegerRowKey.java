@@ -20,17 +20,19 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serialize and deserialize Integer Objects into variable-length, sortable
- * byte array representations. The serialization and deserialization method are
+/** Serializes and deserializes Integer objects into a variable-length
+ * sortable byte aray representation.
+ *
+ * <p>The serialization and deserialization method are
  * identical to {@link IntWritableRowKey} after converting the IntWritable 
- * to/from an Integer.
+ * to/from an Integer</p>.
  *
  * <h1> Usage </h1>
  * This is the slower class for storing ints. No copies are made when 
  * serializing and deserializing. Unfortunately Integer objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive ints are first passed to 
- * {#Integer.valueOf}, so boxed Integer values may be shared if the 
+ * {@link Integer#valueOf}, so boxed Integer values may be shared if the 
  * <code>valueOf</code> method has frequent cache hits.
  */
 public class IntegerRowKey extends IntWritableRowKey 
