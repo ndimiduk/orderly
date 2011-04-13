@@ -21,15 +21,15 @@ import java.util.NoSuchElementException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Iterates over a serialized @{link StructRowKey}. This iterates over each
+/** Iterates over a serialized {@link StructRowKey}. This iterates over each
  * serialized row key field from the specified struct definition, and for each 
  * field allows you to deserialize the field or skip over its serialized bytes. 
  * In contrast, the methods provided by <code>StructRowKey</code>, 
- * @{link StructRowKey#deserialize} and @{link StructRowKey#skip}, 
+ * {@link StructRowKey#deserialize} and {@link StructRowKey#skip}, 
  * deserialize or skip the entire struct at once (respectively).
  *
  * <p>A deserialized field has the same type as the field row key's deserialized
- * class (specified by @{link RowKey#getDeserializedClass}). This iterator may 
+ * class (specified by {@link RowKey#getDeserializedClass}). This iterator may 
  * also be used to deserialize bytes from any <code>StructRowKey</code> for 
  * which the specified row key is a prefix. For example, if the specified 
  * struct row key definition has a long and an integer field, you may parse the
@@ -88,7 +88,8 @@ public class StructIterator implements Iterator<Object>
   /** Resets the read position to the beginning of the serialized byte array */
   public void reset() { 
     this.fieldPos = 0;
-    w.set(w.get(), origOffset, origLength);
+    if (w != null)
+      w.set(w.get(), origOffset, origLength);
   }
 
   /** Skips the current field and increments read position by the number

@@ -33,7 +33,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * serialization format.</p>
  *
  * <h1>Serialization Format</h1>
- * This variable-length format is a subclass of @{link AbstractVarIntRowKey}.
+ * This variable-length format is a subclass of {@link AbstractVarIntRowKey}.
  * The JavaDoc page for the parent class describes the high-level design of the
  * general serialization format. The basic idea is to only encode only those 
  * bits that have values differing from the implicit zero-valued sign bit

@@ -39,7 +39,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * ascending sort where the only serialized bytes come from the string row key.
  * Omitting the explicit terminator byte is known as implicit termination, 
  * because the end of the serialized byte array implicitly terminates the 
- * serialized value. The @{link setMustTerminate} method can be used to 
+ * serialized value. The {@link #setMustTerminate} method can be used to 
  * control when termination is required.
  *
  * <p>If a row key is not forced to terminate, then during deserialization it
@@ -145,7 +145,7 @@ public abstract class RowKey
   public abstract void skip(ImmutableBytesWritable w) throws IOException;
 
   /** Deserializes a key from the byte array. The returned object is an 
-   * instance of the class returned by {@link getSerializedClass}. When this
+   * instance of the class returned by {@link #getSerializedClass}. When this
    * method returns, the byte array's position will be adjusted by the number of
    * bytes in the serialized key. The offset (length) of the byte array is 
    * incremented (decremented) by the number of bytes in the serialized key.

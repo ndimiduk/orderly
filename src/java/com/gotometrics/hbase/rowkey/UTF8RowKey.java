@@ -56,12 +56,12 @@ import org.apache.hadoop.hbase.util.Bytes;
  * including the null and termination bytes. 
  *
  * <h1> Implicit Termination </h1>
- * If @{link mustTerminate} is false and the sort order is ascending, we 
+ * If {@link #mustTerminate} is false and the sort order is ascending, we 
  * encode NULL values as a zero-length byte array, and omit the terminator byte
  * for every string except the empty string. In this case, our format has zero
  * bytes of overhead versus encoding the raw UTF-8 bytes. The end of the byte 
  * array serves as an implicit terminator byte. Implicit termination is 
- * discussed further in @link{RowKey}.
+ * discussed further in {@link RowKey}.
  *
  * <h1> Usage </h1>
  * This is the fastest class for storing characters and strings. 

@@ -34,7 +34,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  *
  * <h1>NULL</h1>
  * Like all fixed-width integer types, this class does <i>NOT</i> support null
- * value types. If you need null support use @{link LongWritableRowKey}.
+ * value types. If you need null support use {@link LongWritableRowKey}.
  *
  * <h1>Descending sort</h1>
  * To sort in descending order we perform the same encodings as in ascending 
@@ -42,7 +42,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  *
  * <h1>Usage</h1>
  * This is the fastest class for storing fixed width 64-bit ints. Use 
- * @{link LongWritableRowKey} for a more compact, variable-length representation
+ * {@link LongWritableRowKey} for a more compact, variable-length representation
  * in almost all cases. This format is only more compact if longs most
  * frequently require 59 or more bits to store (including the sign bit).
  */

@@ -139,22 +139,13 @@ public class TestStructRowKey extends RandomRowKeyTestCase
   }
 
   @Override
-  public void serialize(Object o, ImmutableBytesWritable w) throws IOException
-  {
-    if (r.nextInt(64) != 0) 
-      super.serialize(o, w);
-    else
-      ((StructRowKey)key).serialize(w, (Object[]) o);
-  }
-
-  @Override
   public Object deserialize(ImmutableBytesWritable w) throws IOException 
   {
     if (r.nextInt(64) != 0) 
       return super.deserialize(w);
 
     Object[] o = new Object[fieldTests.length];
-    StructIterator iter = ((StructRowKey)key).iterate(w);
+    StructIterator iter = ((StructRowKey)key).iterateOver(w).iterator();
 
     int pos = 0;
     while (iter.hasNext()) o[pos++] = iter.next(); 

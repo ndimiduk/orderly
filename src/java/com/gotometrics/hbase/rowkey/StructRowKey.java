@@ -23,7 +23,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * byte array. 
  *
  * <p>A struct row key is a composed of a fixed number of fields.
- * Each field is a subclass of @{link RowKey} (and may even be another struct).
+ * Each field is a subclass of {@link RowKey} (and may even be another struct).
  * The struct is sorted by its field values in the order in which the fields 
  * are declared.</p>
  * 
@@ -39,7 +39,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * row key, and so forth. No bytes are serialized directly by the struct class 
  * at all, so no additional bytes are inserted before, after, or in between 
  * values serialized by the field row keys. In all cases except the implicit
- * termination cases mentioned below, field row keys have @{link mustTerminate}
+ * termination cases mentioned below, field row keys have {@link #mustTerminate}
  * set to true to force each field row key to be self-terminating.
  * 
  * <h1> Implicit and Explicit Termination </h1>
@@ -47,7 +47,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * termination flags do not directly affect the serialization. Instead, 
  * the struct row controls explicit and implicit termination settings by 
  * manipulating the must terminate flags of the field row keys using
- * @{link setMustTerminate}. 
+ * {@link #setMustTerminate}. 
  *
  * <p>If <code>mustTerminate</code> is true, then the mustTerminate flag is set 
  * to true in all field row keys. However, if <code>mustTerminate</code>
@@ -89,7 +89,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * @see StructIterator
  * @see StructBuilder
  */
-public class StructRowKey extends RowKey 
+public class StructRowKey extends RowKey implements Iterable<Object>
 {
   private RowKey[] fields;
   private Object[] v;
@@ -176,17 +176,6 @@ public class StructRowKey extends RowKey
       fields[i].serialize(o[i], w);
   }
 
-  /** Serializes a struct row key by specifying its values using a variable
-   * argument list. Each object value corresponds to its equivalent field row 
-   * key, in declaration order (so the first object specifies a value for field row
-   * key 0, the second for field row key 1, and so forth).
-   */
-  public void serialize(ImmutableBytesWritable w, Object... objs) 
-    throws IOException
-  {
-    serialize((Object[])objs, w);
-  }
-
   @Override
   public void skip(ImmutableBytesWritable w) throws IOException {
     for (int i = 0; i < fields.length; i++)
@@ -202,25 +191,39 @@ public class StructRowKey extends RowKey
     return v;
   }
 
-  /** Iterates over a serialized row key. Re-uses the same iterator object
-   * across method calls.
-   * @see StructIterator
-   * @param w serialized row key bytes
-   * @return an iterator for w
+  /** Sets the serialized row key to iterate over. Subsequent calls to 
+   * {@link #iterator} will iterate over this row key.
+   * @param iw serialized row key bytes to use for iteration
+   * @return this object
+   * @see #iterator
    */
-  public StructIterator iterate(ImmutableBytesWritable w) {
-    if (iterator == null)
-      iterator = new StructIterator(this);
-    iterator.setBytes(w);
-    return iterator;
+
+  public StructRowKey iterateOver(ImmutableBytesWritable iw) {
+    this.iw = iw;
+    return this;
   }
 
-  public StructIterator iterate(byte[] b, int offset) {
+  public StructRowKey iterateOver(byte[] b, int offset) {
     if (iw == null)
       iw = new ImmutableBytesWritable();
     iw.set(b, offset, b.length - offset);
-    return iterate(iw);
+    return this;
   }
 
-  public StructIterator iterate(byte[] b) { return iterate(b, 0); }
+  public StructRowKey iterateOver(byte[] b) { return iterateOver(b, 0); }
+
+  /** Iterates over a serialized row key. Re-uses the same iterator object
+   * across method calls. 
+   * @see StructIterator
+   * @see #iterateOver
+   * @return an iterator for w
+   */
+  @Override
+  public StructIterator iterator() {
+    if (iterator == null)
+      iterator = new StructIterator(this);
+    iterator.reset();
+    iterator.setBytes(iw);
+    return iterator;
+  }
 }

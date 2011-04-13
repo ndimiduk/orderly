@@ -21,7 +21,7 @@ import java.math.BigDecimal;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-/** Serializes and deserializes @{link BigDecimal} Objects into a sortable byte
+/** Serializes and deserializes {@link BigDecimal} Objects into a sortable byte
  * array representation.
  * 
  * <p>This class allows <code>BigDecimal</code> 
@@ -29,8 +29,8 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * when required. The serialization method is identical
  * to {@link BigDecimalRowKey}. The deserialization methods returns
  * an <code>ImmutableBytesWritable</code> object containing the raw serialized
- * bytes. A separate method, @{link getBigDecimal} (identical to 
- * @{link BigDecimalRowKey#deserialize}) is used to fully deserialize
+ * bytes. A separate method, {@link #getBigDecimal} (identical to 
+ * {@link BigDecimalRowKey#deserialize}) is used to fully deserialize
  * this byte array lazily on demand.</p>
  *
  * <h1> Usage </h1>

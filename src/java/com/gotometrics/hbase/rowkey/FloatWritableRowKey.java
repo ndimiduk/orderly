@@ -55,7 +55,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * floating point number was negative.</p>
  *
  * <p>More specifically, we first store the floating point bits into a 32-bit 
- * int <code>j</code> using {@link Float.floatToIntBits}. This method 
+ * int <code>j</code> using {@link Float#floatToIntBits}. This method 
  * collapses all NaNs into a single, canonical NaN value but otherwise leaves 
  * the bits unchanged. We then compute</p>
  *
@@ -86,10 +86,10 @@ import org.apache.hadoop.hbase.util.Bytes;
  * sort, except we logically invert (take the 1's complement of) each byte. 
  *
  * <h1> Implicit Termination </h1>
- * If @{link mustTerminate} is false and the sort order is ascending, we can 
+ * If {@link #mustTerminate} is false and the sort order is ascending, we can 
  * encode NULL values as a zero-length byte array instead of using the 8 byte 
  * encoding specified above. Implicit termination is discussed further in 
- * @link{RowKey}.
+ * {@link RowKey}.
  *
  * <h1> Usage </h1>
  * This is the fastest class for storing floats. It performs no object copies

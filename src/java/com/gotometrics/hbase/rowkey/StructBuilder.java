@@ -18,7 +18,7 @@ package com.gotometrics.hbase.rowkey;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Builds @{link StructRowKey} objects.  */
+/** Builds {@link StructRowKey} objects.  */
 public class StructBuilder
 {
   protected List<RowKey> fields;
@@ -38,7 +38,7 @@ public class StructBuilder
   /** Sets a struct field to the specified row key. Fields are numbered 
    * sequentially in the order they are added, starting from 0.
    * @param i struct field definition index
-   * @param field row key assigned to field definition
+   * @param key row key assigned to field definition
    * @return this object
    */
   public StructBuilder set(int i, RowKey key) {
@@ -65,5 +65,14 @@ public class StructBuilder
   public StructRowKey toRowKey() {
     RowKey[] fields = this.fields.toArray(new RowKey[0]);
     return (StructRowKey) new StructRowKey(fields).setOrder(order);
+  }
+
+  /** Resets the struct builder. Removes all fields, sets sort order to 
+   * ascending.
+   */
+  public StructBuilder reset() { 
+    fields.clear();
+    order = Order.ASCENDING;
+    return this;
   }
 }

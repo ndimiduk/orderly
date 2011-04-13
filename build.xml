@@ -8,11 +8,13 @@
   <property name="src.dir" value="${basedir}/src"/>  	
   <property name="src.java" value="${src.dir}/java"/>  	
   <property name="src.test" location="${src.dir}/test"/>
+  <property name="src.example" location="${src.dir}/example"/>
   <property name="lib.dir" value="${basedir}/lib"/>
 
   <property name="build.dir" value="${basedir}/build"/>
   <property name="build.classes" value="${build.dir}/classes"/>
   <property name="build.test" location="${build.dir}/test"/>
+  <property name="build.example" location="${build.dir}/example"/>
   <property name="build.lib" location="${build.dir}/lib"/>
   <property name="build.docs" value="${build.dir}/docs"/>
   <property name="build.javadoc" value="${build.docs}/api"/>
@@ -51,6 +53,7 @@
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${build.classes}"/>
     <mkdir dir="${build.test}"/>
+    <mkdir dir="${build.example}"/>
 
     <mkdir dir="${build.lib}"/>
     <copy todir="${build.lib}">
@@ -72,10 +75,12 @@
     </javac>
   </target>
 
-  <target name="jar" depends="compile, compile-test">
+  <target name="jar" depends="compile, compile-test, compile-example">
     <jar jarfile="${build.dir}/${final.name}.jar" basedir="${build.classes}"/>
     <jar jarfile="${build.dir}/${final.name}-test.jar"  
          basedir="${build.test}"/>
+    <jar jarfile="${build.dir}/${final.name}-example.jar"  
+         basedir="${build.example}"/>
   </target>
 
   <target name="package" depends="jar,javadoc">
@@ -84,6 +89,7 @@
       <fileset dir="${build.dir}">
         <include name="${final.name}.jar" />
         <include name="${final.name}-test.jar" />
+        <include name="${final.name}-example.jar" />
       </fileset>
     </copy>
 
@@ -126,7 +132,6 @@
   <target name="javadoc">
     <mkdir dir="${build.javadoc}"/>
     <javadoc
-      overview="${src.dir}/overview.html"
       packagenames="com.gotometrics.hbase.rowkey.*"
       destdir="${build.javadoc}"
       author="true"
@@ -136,7 +141,7 @@
       doctitle="${Name} ${version} API"
       bottom="Copyright &amp;copy; ${year} The Apache Software Foundation"
       >
-    	<packageset dir="${src.dir}"/>
+    	<packageset dir="${src.java}"/>
         <link href="${javadoc.link.java}"/>
         <classpath >
           <path refid="classpath" />
@@ -147,6 +152,11 @@
 
   <path id="test.classpath">
     <pathelement location="${build.test}" />
+    <path refid="classpath"/>
+  </path>
+
+  <path id="example.classpath">
+    <pathelement location="${build.example}" />
     <path refid="classpath"/>
   </path>
 
@@ -162,6 +172,21 @@
      deprecation="${javac.deprecation}">
       <compilerarg line="${javac.args} ${javac.args.warnings}" />
       <classpath refid="test.classpath"/>
+    </javac>
+  </target>
+
+  <target name="compile-example" depends="compile">
+    <javac 
+     srcdir="${src.example}"	
+     includes="**/*.java"
+     destdir="${build.example}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="example.classpath"/>
     </javac>
   </target>
 

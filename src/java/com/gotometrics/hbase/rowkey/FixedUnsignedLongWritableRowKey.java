@@ -29,7 +29,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  *
  * <h1> Usage </h1>
  * This is the fastest class for storing fixed width 64-bit unsigned ints. Use 
- * @{link UnsignedLongWritableRowKey} for a more compact, variable-length 
+ * {@link UnsignedLongWritableRowKey} for a more compact, variable-length 
  * representation. This format is more compact only if integers most frequently
  * require 59 or more bits to store.
  */

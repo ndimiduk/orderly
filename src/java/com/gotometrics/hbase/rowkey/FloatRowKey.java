@@ -32,7 +32,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * serializing and deserializing, but unfortunately Float objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive floats are first passed to 
- * @{link Float#valueOf}, so boxed Float values may be shared if the 
+ * {@link Float#valueOf}, so boxed Float values may be shared if the 
  * <code>valueOf</code> method has frequent cache hits.
  */
 public class FloatRowKey extends FloatWritableRowKey 
