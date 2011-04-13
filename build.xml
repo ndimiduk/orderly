@@ -2,7 +2,7 @@
   <property file="${basedir}/build.properties" />
   <property name="name" value="hbase-rowkey"/>
   <property name="Name" value="HBase RowKey"/>
-  <property name="version" value="0.1"/>
+  <property name="version" value="0.9"/>
   <property name="final.name" value="${name}-${version}"/>
 
   <property name="src.dir" value="${basedir}/src"/>  	
@@ -139,7 +139,6 @@
       use="true"
       windowtitle="${Name} ${version} API"
       doctitle="${Name} ${version} API"
-      bottom="Copyright &amp;copy; ${year} The Apache Software Foundation"
       >
     	<packageset dir="${src.java}"/>
         <link href="${javadoc.link.java}"/>
