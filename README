@@ -1,4 +1,4 @@
-HBase Row Key
+Orderly
 
 This project serializes a wide range of simple and complex key data types into a
 sort-order preserving byte encoding. Sorting the serialized byte arrays produces

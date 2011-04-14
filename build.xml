@@ -1,7 +1,7 @@
-<project name="hbase-rowkey" default="jar">
+<project name="orderly" default="jar">
   <property file="${basedir}/build.properties" />
-  <property name="name" value="hbase-rowkey"/>
-  <property name="Name" value="HBase RowKey"/>
+  <property name="name" value="orderly"/>
+  <property name="Name" value="Orderly"/>
   <property name="version" value="0.9"/>
   <property name="final.name" value="${name}-${version}"/>
 
@@ -35,7 +35,7 @@
 
   <property name="javadoc.link.java"
     value="http://download.oracle.com/javase/6/docs/api/"/>
-  <property name="javadoc.packages" value="com.gotometrics.hbase.rowkey.*"/>
+  <property name="javadoc.packages" value="com.gotometrics.orderly.*"/>
 
   <property name="javac.debug" value="on"/>
   <property name="javac.optimize" value="on"/>
@@ -132,7 +132,7 @@
   <target name="javadoc">
     <mkdir dir="${build.javadoc}"/>
     <javadoc
-      packagenames="com.gotometrics.hbase.rowkey.*"
+      packagenames="com.gotometrics.orderly.*"
       destdir="${build.javadoc}"
       author="true"
       version="true"
