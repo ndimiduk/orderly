@@ -140,7 +140,8 @@ import org.apache.hadoop.hbase.util.Bytes;
  * encode NULL values as a zero-length byte array instead of the format
  * specified above. We also omit the trailing terminator byte in our BCD
  * representation (which is only required for even-length BCD serializations
- * anyway). Implicit termination is discussed further in {@link RowKey}.
+ * anyway). Implicit termination is discussed further in 
+ * {@link com.gotometrics.orderly.RowKey}.
  *
  * <h1> Usage </h1>
  * This is the second fastest class for storing <code>BigDecimal</code> objects.
@@ -395,13 +396,13 @@ public class BigDecimalRowKey extends RowKey
     public Class<?> getSerializedClass() { return LongWritable.class; }
 
     @Override
-    public Writable createWritable() { return new LongWritable(); }
+    Writable createWritable() { return new LongWritable(); }
 
     @Override
-    public void setWritable(long x, Writable w) { ((LongWritable)w).set(x); }
+    void setWritable(long x, Writable w) { ((LongWritable)w).set(x); }
 
     @Override
-    public long getWritable(Writable w) { return ((LongWritable)w).get(); }
+    long getWritable(Writable w) { return ((LongWritable)w).get(); }
 
     @Override
     protected byte mask(byte b) {

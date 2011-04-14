@@ -128,21 +128,19 @@ public class UnsignedIntWritableRowKey extends AbstractVarIntRowKey
   public Class<?> getSerializedClass() { return IntWritable.class; }
 
   @Override
-  public Writable createWritable() { return new IntWritable(); }
+  Writable createWritable() { return new IntWritable(); }
 
   @Override
-  public void setWritable(long x, Writable w) { 
-    ((IntWritable)w).set((int)x); 
-  }
+  void setWritable(long x, Writable w) { ((IntWritable)w).set((int)x); }
 
   @Override
-  public long getWritable(Writable w) { 
+  long getWritable(Writable w) { 
     int i = ((IntWritable)w).get();
     return ((long)i) & 0xffffffffL;
   }
 
   @Override
-  public long getSign(long l) { return 0; }
+  long getSign(long l) { return 0; }
 
   @Override
   protected byte initHeader(boolean sign) { return 0; }

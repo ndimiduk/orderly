@@ -35,7 +35,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * serializing and deserializing, but unfortunately Double objects are 
  * immutable and thus cannot be re-used across multiple deserializations.
  * However, deserialized primitive doubles are first passed to 
- * {link Double#valueOf}, so boxed Double values may be shared if the 
+ * {@link Double#valueOf}, so boxed Double values may be shared if the 
  * <code>valueOf</code> method has frequent cache hits.
  */
 public class DoubleRowKey extends DoubleWritableRowKey 

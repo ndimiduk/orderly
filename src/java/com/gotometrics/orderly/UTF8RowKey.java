@@ -45,7 +45,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * solution is available to us for encoding NULL and terminator bytes. UTF-8 
  * encoding will never produce the byte values <code>0xff</code> or 
  * <code>0xfe</code>. Thus, we may reserve <code>0x00</code> for NULL and 
- * <code>0x01<code> for terminator if we add 2 to each UTF-8 byte when 
+ * <code>0x01</code> for terminator if we add 2 to each UTF-8 byte when 
  * serializing the UTF-8 byte array.</p>
  *
  * To encode a NULL, we output 0x0 and return. Otherwise, to encode a non-NULL
