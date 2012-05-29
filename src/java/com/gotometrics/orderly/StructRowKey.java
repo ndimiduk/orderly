@@ -22,6 +22,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
+import static com.gotometrics.orderly.Termination.SHOULD_NOT;
+
 /** Serialize and deserialize a struct (record) row key into a sortable
  * byte array. 
  *
@@ -153,7 +155,7 @@ public class StructRowKey extends RowKey implements Iterable<Object>
      * struct or (ii) any field after f has a non-zero deserialized length
      */
     for (int i = o.length - 1; i >= 0; i--) {
-      if (fields[i].getTermination() != Termination.SHOULD_NOT) // SHOULD_NOT always wins
+      if (fieldTerm == SHOULD_NOT || fields[i].getTermination() != SHOULD_NOT) // SHOULD_NOT always wins
         fields[i].setTermination(fieldTerm);
       int objLen = fields[i].getSerializedLength(o[i]);
       if (objLen > 0) {
