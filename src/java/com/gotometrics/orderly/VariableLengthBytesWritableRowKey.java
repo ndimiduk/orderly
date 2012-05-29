@@ -68,7 +68,8 @@ import org.apache.hadoop.io.BytesWritable;
  * arrays are also of the same length and that their byte order is the same as the byte order of the original byte
  * arrays. Also, when encoding two byte arrays of different lengths, the byte order of the encoded byte arrays should
  * be the same as of the original byte arrays. To accomplish this, we use a filler character such that all encoding is
- * always using the same number of encoded bytes per original byte (i.e. 3 nibbles per original byte, so a loss of 50%).
+ * always using the same number of encoded bytes per original byte (i.e. 3 nibbles per original byte, so a loss of
+ * 50%).
  * The filler nibble should be smaller than any real encoded value, but bigger than the nibbles used for zero and NULL.
  * <p/>
  * To encode a NULL, we output 0x00 and return. Otherwise, to encode a non-NULL
@@ -109,7 +110,8 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
         if (o == null)
             return terminate() ? 1 : 0;
 
-        return getSerializedLength(toStringRepresentation(((BytesWritable) o).getBytes()));
+        final BytesWritable input = (BytesWritable) o;
+        return getSerializedLength(toStringRepresentation(input.getBytes(), input.getLength()));
     }
 
     /**
@@ -152,21 +154,47 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
                 RowKeyUtils.seek(bytesWritable, 1);
             }
         } else {
-            encodedCustomizedReversedPackedBcd(toStringRepresentation(((BytesWritable) o).getBytes()), bytesWritable);
+            final BytesWritable input = (BytesWritable) o;
+            encodedCustomizedReversedPackedBcd(toStringRepresentation(input.getBytes(), input.getLength()),
+                    bytesWritable);
         }
     }
 
-    private String toStringRepresentation(byte[] bytes) {
-        final StringBuffer result = new StringBuffer();
-        for (byte aByte : bytes) {
+    private String toStringRepresentation(byte[] bytes, int length) {
+        final StringBuilder result = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            byte aByte = bytes[i];
             // An unsigned byte results in max 3 decimal digits (because max value is "255") and we want to use
             // always the max size such that if two byte arrays have the same length,
             // the two encoded byte arrays also have the same length (such that byte sort order is remained).
             // Therefore, we fill the gaps with a filler character.
-            result.append(String.format("%03d", UnsignedBytes.toInt(aByte)));
+            result.append(prependZeroes(3, "" + UnsignedBytes.toInt(aByte)));
         }
 
         return result.toString();
+    }
+
+    /**
+     * Prepend a string with zeroes up to the given total length. Note that we could have used String.format("%03d",
+     * ...) here but this turned out to be a performance killer!
+     *
+     * @param totalLength length of the returned string
+     * @param string string to prepend with zeroes
+     * @return zero prepended string
+     */
+    private String prependZeroes(int totalLength, String string) {
+        if (string.length() >= totalLength) {
+            // no need to prepend anything
+            return string;
+        } else {
+            // prepend with zeroes up to requested total length
+            final StringBuilder zeroes = new StringBuilder(totalLength - string.length());
+            for (int i = 0; i < totalLength - string.length(); i++) {
+                zeroes.append("0");
+            }
+
+            return zeroes.toString() + string;
+        }
     }
 
     private byte[] fromStringRepresentation(String string) {
