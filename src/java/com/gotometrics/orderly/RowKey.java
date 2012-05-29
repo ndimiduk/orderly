@@ -57,7 +57,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * ascending sort where the only serialized bytes come from the string row key.
  * Omitting the explicit terminator byte is known as implicit termination, 
  * because the end of the serialized byte array implicitly terminates the 
- * serialized value. The {@link #setMustTerminate} method can be used to 
+ * serialized value. The {@link #setTermination} method can be used to
  * control when termination is required.
  *
  * <p>If a row key is not forced to terminate, then during deserialization it
@@ -70,16 +70,16 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  *
  * <p>The JavaDoc of each
  * row key class describes the effects of implicit and explicit termination
- * of the class's serialization. Note that the <code>mustTerminate</code> flag 
+ * of the class's serialization. Note that the <code>termination</code> flag
  * only affects serialization. For all row key types, deserialization and skip 
  * methods are able to detect values encoded in both implicit and explicit 
- * terminated formats, regardless of what the <code>mustTerminate</code> flag
+ * terminated formats, regardless of what the <code>termination</code> flag
  * is set to.</p>
  */
 public abstract class RowKey 
 {
   protected Order order;
-  protected boolean mustTerminate;
+  protected Termination termination = Termination.AUTO;
   private ImmutableBytesWritable w;
 
   public RowKey() { this.order = Order.ASCENDING; }
@@ -91,25 +91,34 @@ public abstract class RowKey
   /** Gets the sort order of the row key - ascending or descending */
   public Order getOrder() { return order; }
 
-  /** Returns true if the row key serialization must be explicitly terminated 
+  /** Returns whether explicit termination in the serialized row key must be guaranteed
    * in some fashion (such as a terminator byte or a self-describing length).
-   * If this is false, the end of the byte array may serve as an implicit 
-   * terminator. Defaults to false.
+   * Otherwise, the end of the byte array may serve as an implicit
+   * terminator. Defaults to "AUTO".
    */
-  public boolean mustTerminate() { return mustTerminate; }
+  public Termination getTermination() { return termination; }
 
-  /** Sets the mustTerminate flag for this row key. If this flag is false,
-   * the end of the byte array can be used to terminate encoded values. You
-   * should only set this value if you are adding a custom byte value suffix
-   * to a row key.
+  /** Sets the mustTerminate flag for this row key. Without explicit termination,
+   * the end of the byte array can be used to terminate encoded values.
    */
-  public RowKey setMustTerminate(boolean mustTerminate) {
-    this.mustTerminate = mustTerminate;
+  public RowKey setTermination(Termination termination) {
+    this.termination = termination;
     return this;
   }
 
   /** Returns true if termination is required */
-  boolean terminate() { return mustTerminate || order == Order.DESCENDING; }
+  boolean terminate() {
+    switch (termination) {
+      case SHOULD_NOT:
+        return false;
+      case MUST:
+        return true;
+      case AUTO:
+        return order == Order.DESCENDING;
+      default:
+        throw new IllegalStateException("unknown termination " + termination);
+    }
+  }
 
   /** Gets the class of the object used for serialization.
    * @see #serialize

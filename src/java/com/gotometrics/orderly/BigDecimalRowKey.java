@@ -22,10 +22,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
 
 /** Serializes and deserializes BigDecimal objects into a sortable 
  * byte aray representation.
@@ -136,7 +135,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * negated bytes once due to a negative header value.
  *
  * <h1> Implicit Termination </h1>
- * If {@link #mustTerminate} is false and the sort order is ascending, we 
+ * If {@link #termination} is false and the sort order is ascending, we
  * encode NULL values as a zero-length byte array instead of the format
  * specified above. We also omit the trailing terminator byte in our BCD
  * representation (which is only required for even-length BCD serializations
@@ -168,7 +167,7 @@ public class BigDecimalRowKey extends RowKey
 
   public BigDecimalRowKey() {
     expKey = new ExponentRowKey();
-    expKey.setReservedBits(HEADER_BITS).setMustTerminate(true);
+    expKey.setReservedBits(HEADER_BITS).setTermination(Termination.MUST);
   }
 
   @Override

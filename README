@@ -1,3 +1,10 @@
+TODO: documentation needs to be updated with what is changed wrt the original Orderly library
+
+- maven build
+- support for fixed and variable length byte arrays. Fixed length "as is", variable length using a BCD encoding
+- support for explicitely disabling termination, for example useful when building rowkeys to be used for prefix searching
+- ...
+
 Orderly
 
 This project serializes a wide range of simple and complex key data types into a

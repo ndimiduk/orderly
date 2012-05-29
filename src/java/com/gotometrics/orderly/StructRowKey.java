@@ -42,7 +42,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * row key, and so forth. No bytes are serialized directly by the struct class 
  * at all, so no additional bytes are inserted before, after, or in between 
  * values serialized by the field row keys. In all cases except the implicit
- * termination cases mentioned below, field row keys have {@link #mustTerminate}
+ * termination cases mentioned below, field row keys have {@link #termination}
  * set to true to force each field row key to be self-terminating.
  * 
  * <h1> Implicit and Explicit Termination </h1>
@@ -50,7 +50,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
  * termination flags do not directly affect the serialization. Instead, 
  * the struct row controls explicit and implicit termination settings by 
  * manipulating the must terminate flags of the field row keys using
- * {@link #setMustTerminate}. 
+ * {@link #setTermination}.
  *
  * <p>If <code>mustTerminate</code> is true, then the mustTerminate flag is set 
  * to true in all field row keys. However, if <code>mustTerminate</code>
@@ -147,16 +147,17 @@ public class StructRowKey extends RowKey implements Iterable<Object>
    */
   private int setTerminateAndGetLength(Object[] o) throws IOException {
     int len = 0;
-    boolean fieldTerm = mustTerminate;
+    Termination fieldTerm = termination;
 
     /* We must terminate a field f if (i) mustTerminate is true for this
      * struct or (ii) any field after f has a non-zero deserialized length
      */
     for (int i = o.length - 1; i >= 0; i--) {
-      fields[i].setMustTerminate(fieldTerm);
+      if (fields[i].getTermination() != Termination.SHOULD_NOT) // SHOULD_NOT always wins
+        fields[i].setTermination(fieldTerm);
       int objLen = fields[i].getSerializedLength(o[i]);
       if (objLen > 0) {
-        fieldTerm = true;
+        fieldTerm = Termination.MUST;
         len += objLen;
       }
     }

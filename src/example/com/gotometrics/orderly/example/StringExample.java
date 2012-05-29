@@ -87,7 +87,7 @@ public class StringExample
     System.out.println("deserialize(serialize(null)) = " 
         + u.deserialize(u.serialize(null)));
 
-    u.setMustTerminate(true);
+    u.setTermination(true);
     System.out.println("mustTerminate length(serialize(foobar)) = " 
         + u.serialize(Bytes.toBytes("foobar")).length);
     System.out.println("mustTerminate - deserialize(serialize(foobar)) = " 

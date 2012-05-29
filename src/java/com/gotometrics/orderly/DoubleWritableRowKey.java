@@ -20,9 +20,9 @@ package com.gotometrics.orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 
 /** Serializes and deserializes DoubleWritables into a sortable byte aray 
  * representation.
@@ -89,7 +89,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * sort, except we logically invert (take the 1's complement of) each byte. 
  *
  * <h1> Implicit Termination </h1>
- * If {@link #mustTerminate} is false and the sort order is ascending, we can 
+ * If {@link #termination} is false and the sort order is ascending, we can
  * encode NULL values as a zero-length byte array instead of using the 8 byte 
  * encoding specified above. Implicit termination is discussed further in 
  * {@link RowKey}.

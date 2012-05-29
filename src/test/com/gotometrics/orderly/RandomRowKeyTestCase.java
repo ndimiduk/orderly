@@ -23,9 +23,6 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,7 +62,7 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   @Override
   public ImmutableBytesWritable allocateBuffer(Object o) throws IOException {
     return new RedZoneImmutableBytesWritable(key.getSerializedLength(o),
-        key.mustTerminate());
+        key.getTermination() == Termination.MUST);
   }
 
   @Override
@@ -167,7 +164,7 @@ public abstract class RandomRowKeyTestCase extends RowKeyTestCase
   public void testRowKey() throws IOException {
     for (int i = 0; i < numTests; i++) {
       setRowKey(createRowKey().setOrder(r.nextBoolean() ? Order.ASCENDING :
-            Order.DESCENDING).setMustTerminate(r.nextBoolean()));
+            Order.DESCENDING).setTermination(r.nextBoolean() ? Termination.MUST : Termination.AUTO));
       super.testRowKey();
       if (i != numTests - 1) {
         tearDown();

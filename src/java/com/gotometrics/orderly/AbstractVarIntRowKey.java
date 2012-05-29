@@ -20,9 +20,9 @@ package com.gotometrics.orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.Writable;
 
 /** Serializes and deserializes various integer types a sortable, 
  * variable-length  byte array.
@@ -75,7 +75,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * NULL.
  *
  * <h1>Implicit Termination</h1>
- * If {@link #mustTerminate} is false and the sort order is ascending, we can 
+ * If {@link #termination} is false and the sort order is ascending, we can
  * encode NULL values as a zero-length byte array. Otherwise, the header byte
  * value <code>0x00</code> is used to serialize NULLs. Subclasses ensure this 
  * header byte is used if and only if the serialized value is NULL.

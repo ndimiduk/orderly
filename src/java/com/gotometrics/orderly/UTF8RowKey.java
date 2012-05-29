@@ -21,7 +21,6 @@ package com.gotometrics.orderly;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
 
 /** Serialize and deserialize UTF-8 byte arrays into a sortable byte array
  * representation.
@@ -59,7 +58,7 @@ import org.apache.hadoop.hbase.util.Bytes;
  * including the null and termination bytes. 
  *
  * <h1> Implicit Termination </h1>
- * If {@link #mustTerminate} is false and the sort order is ascending, we 
+ * If {@link #termination} is false and the sort order is ascending, we
  * encode NULL values as a zero-length byte array, and omit the terminator byte
  * for every string except the empty string. In this case, our format has zero
  * bytes of overhead versus encoding the raw UTF-8 bytes. The end of the byte 
