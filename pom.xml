@@ -3,7 +3,7 @@
 
   <groupId>com.gotometrics.orderly</groupId>
   <artifactId>orderly</artifactId>
-  <version>0.10-SNAPSHOT</version>
+  <version>0.9-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Orderly</name>
   <url>https://github.com/NGDATA/orderly</url>
