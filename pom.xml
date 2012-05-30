@@ -10,8 +10,8 @@
   <url>https://github.com/NGDATA/orderly</url>
 
   <scm>
-    <connection>scm:git:git://github.com/NGDATA/orderly.git</connection>
-    <developerConnection>scm:git:git://github.com/NGDATA/orderly.git</developerConnection>
+    <connection>scm:git:git@github.com/NGDATA/orderly.git</connection>
+    <developerConnection>scm:git:git@github.com/NGDATA/orderly.git</developerConnection>
     <url>http://github.com/NGDATA/orderly.git</url>
   </scm>
 
