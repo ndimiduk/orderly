@@ -25,7 +25,8 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.BytesWritable;
 
 /**
- * Serializes and deserializes BytesWritable into a sortable variable length representation.
+ * Serializes and deserializes BytesWritable into a sortable variable length representation with an optional fixed
+ * length prefix (on which no encoding will be applied).
  *
  * <h1>Serialization Format</h1>
  * <p/>
@@ -76,6 +77,9 @@ import org.apache.hadoop.io.BytesWritable;
  * byte array we BCD encode the byte array and then append the
  * terminator nibble at the end. Decoding is simply the reverse of the above
  * operations.
+ * <p/>
+ * The fixed length prefix will be written as is before the variable length part. This can be useful to prevent BCD
+ * encoding on a fixed parth (which you know will always be there anyways).
  *
  * <h1> Descending sort </h1>
  * To sort in descending order we perform the same encodings as in ascending
@@ -100,6 +104,18 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
 
     private static final byte FILLER_NIBBLE = 0x02;
 
+    private final int fixedPrefixLength;
+
+    public VariableLengthBytesWritableRowKey() {
+        // no fixed part by default
+        this(0);
+    }
+
+    public VariableLengthBytesWritableRowKey(int fixedPrefixLength) {
+        this.fixedPrefixLength = fixedPrefixLength;
+
+    }
+
     @Override
     public Class<?> getSerializedClass() {
         return BytesWritable.class;
@@ -108,10 +124,11 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
     @Override
     public int getSerializedLength(Object o) throws IOException {
         if (o == null)
-            return terminate() ? 1 : 0;
+            return terminate() ? fixedPrefixLength + 1 : fixedPrefixLength;
 
         final BytesWritable input = (BytesWritable) o;
-        return getSerializedLength(toStringRepresentation(input.getBytes(), input.getLength()));
+        return fixedPrefixLength + getSerializedLength(
+                toStringRepresentation(input.getBytes(), fixedPrefixLength, input.getLength() - fixedPrefixLength));
     }
 
     /**
@@ -127,43 +144,46 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
             return s.length() == 0 ? 1 : (s.length() + 1) / 2;
     }
 
-    protected int getBcdEncodedLength(ImmutableBytesWritable bytesWritable) {
-        byte[] bytes = bytesWritable.get();
-        int offset = bytesWritable.getOffset();
-        int len = bytesWritable.getLength();
-
-        int i = 0;
-        while (i < len) {
-            byte c = mask(bytes[offset + i++]);
-            if ((c & 0x0f) == TERMINATOR_NIBBLE)
-                break;
-        }
-
-        return i;
-    }
-
     @Override
     public void serialize(Object o, ImmutableBytesWritable bytesWritable) throws IOException {
         byte[] bytesToWriteIn = bytesWritable.get();
         int offset = bytesWritable.getOffset();
 
         if (o == null) {
-            if (terminate()) {
+            if (fixedPrefixLength > 0)
+                throw new IllegalStateException("excepted at least " + fixedPrefixLength + " bytes to write");
+            else if (terminate()) {
                 // write one (masked) null byte
                 bytesToWriteIn[offset] = mask(NULL);
                 RowKeyUtils.seek(bytesWritable, 1);
             }
         } else {
             final BytesWritable input = (BytesWritable) o;
-            encodedCustomizedReversedPackedBcd(toStringRepresentation(input.getBytes(), input.getLength()),
-                    bytesWritable);
+            if (fixedPrefixLength > input.getLength())
+                throw new IllegalStateException("excepted at least " + fixedPrefixLength + " bytes to write");
+            else {
+                encodeFixedPrefix(input.getBytes(), bytesWritable);
+                encodedCustomizedReversedPackedBcd(toStringRepresentation(input.getBytes(), fixedPrefixLength,
+                        input.getLength() - fixedPrefixLength),
+                        bytesWritable);
+            }
         }
     }
 
-    private String toStringRepresentation(byte[] bytes, int length) {
+    private void encodeFixedPrefix(byte[] input, ImmutableBytesWritable bytesWritable) {
+        final byte[] output = bytesWritable.get();
+        final int offset = bytesWritable.getOffset();
+        for (int i = 0; i < fixedPrefixLength; i++) {
+            output[offset + i] = mask(input[i]);
+        }
+
+        RowKeyUtils.seek(bytesWritable, fixedPrefixLength);
+    }
+
+    private String toStringRepresentation(byte[] bytes, int offset, int length) {
         final StringBuilder result = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            byte aByte = bytes[i];
+            byte aByte = bytes[offset + i];
             // An unsigned byte results in max 3 decimal digits (because max value is "255") and we want to use
             // always the max size such that if two byte arrays have the same length,
             // the two encoded byte arrays also have the same length (such that byte sort order is remained).
@@ -179,7 +199,7 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
      * ...) here but this turned out to be a performance killer!
      *
      * @param totalLength length of the returned string
-     * @param string string to prepend with zeroes
+     * @param string      string to prepend with zeroes
      * @return zero prepended string
      */
     private String prependZeroes(int totalLength, String string) {
@@ -221,16 +241,66 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
         if (bytesWritable.getLength() <= 0)
             return;
 
-        RowKeyUtils.seek(bytesWritable, getBcdEncodedLength(bytesWritable));
+        byte[] bytes = bytesWritable.get();
+        int offset = bytesWritable.getOffset();
+        int len = bytesWritable.getLength();
+
+        RowKeyUtils.seek(bytesWritable,
+                fixedPrefixLength + getBcdEncodedLength(bytes, offset + fixedPrefixLength, len - fixedPrefixLength));
+    }
+
+    protected int getBcdEncodedLength(byte[] bytes, int offset, int len) {
+
+        int i = 0;
+        while (i < len) {
+            byte c = mask(bytes[offset + i++]);
+            if ((c & 0x0f) == TERMINATOR_NIBBLE)
+                break;
+        }
+
+        return i;
     }
 
     @Override
     public Object deserialize(ImmutableBytesWritable bytesWritable) throws IOException {
-        if (bytesWritable.getLength() <= 0)
+        final int length = bytesWritable.getLength();
+
+        if (length <= 0 && fixedPrefixLength == 0)
             return null;
 
-        return new BytesWritable(fromStringRepresentation(decodeCustomizedReversedPackedBcd(bytesWritable)));
+        final int offset = bytesWritable.getOffset();
+        final int variableLengthSuffixOffset = offset + fixedPrefixLength;
+        final int variableLengthSuffixLength = length - fixedPrefixLength;
+
+        final byte[] fixedLengthPrefix = decodeFixedPrefix(bytesWritable);
+
+        final byte[] variableLengthSuffix = fromStringRepresentation(
+                decodeCustomizedReversedPackedBcd(bytesWritable, variableLengthSuffixOffset,
+                        variableLengthSuffixLength));
+
+        return new BytesWritable(merge(fixedLengthPrefix, variableLengthSuffix));
     }
+
+    private static byte[] merge(byte[] array1, byte[] array2) {
+        byte[] merged = new byte[array1.length + array2.length];
+        System.arraycopy(array1, 0, merged, 0, array1.length);
+        System.arraycopy(array2, 0, merged, array1.length, array2.length);
+        return merged;
+    }
+
+    private byte[] decodeFixedPrefix(ImmutableBytesWritable input) {
+        final byte[] output = new byte[fixedPrefixLength];
+
+        final byte[] inputBytes = input.get();
+        final int offset = input.getOffset();
+        for (int i = 0; i < fixedPrefixLength; i++) {
+            output[i] = mask(inputBytes[offset + i]);
+        }
+
+        RowKeyUtils.seek(input, fixedPrefixLength);
+        return output;
+    }
+
 
     private static byte[] CUSTOMIZED_BCD_ENC_LOOKUP = new byte[]{3, 4, 5, 6, 7, 9, 10, 12, 14, 15};
 
@@ -278,16 +348,13 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
      * @param bytesWritable the customized packed BCD encoded byte array
      * @return The decoded value
      */
-    String decodeCustomizedReversedPackedBcd(ImmutableBytesWritable bytesWritable) {
-        byte[] b = bytesWritable.get();
-        int offset = bytesWritable.getOffset();
-        int len = bytesWritable.getLength();
-
+    String decodeCustomizedReversedPackedBcd(ImmutableBytesWritable bytesWritable, int offset, int length) {
         int i = 0;
+        final byte[] bytes = bytesWritable.get();
 
         StringBuilder sb = new StringBuilder();
-        while (i < len) {
-            byte c = mask(b[offset + i++]);
+        while (i < length) {
+            byte c = mask(bytes[offset + i++]);
             if (addDigit((byte) ((c >>> 4) & 0x0f), sb) || addDigit((byte) (c & 0x0f), sb))
                 break;
         }

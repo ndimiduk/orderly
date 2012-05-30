@@ -31,6 +31,13 @@ import org.apache.hadoop.io.BytesWritable;
  */
 public class VariableLengthByteArrayRowKey extends VariableLengthBytesWritableRowKey {
 
+    public VariableLengthByteArrayRowKey() {
+    }
+
+    public VariableLengthByteArrayRowKey(int fixedPrefixLength) {
+        super(fixedPrefixLength);
+    }
+
     @Override
     public Class<?> getSerializedClass() {
         return byte[].class;

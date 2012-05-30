@@ -64,8 +64,8 @@ public class TestVariableLengthBytesWritableRowKey extends RandomRowKeyTestCase 
     }
 
     private String decode(byte[] input) {
-        return new VariableLengthBytesWritableRowKey()
-                .decodeCustomizedReversedPackedBcd(new ImmutableBytesWritable(input));
+        return new VariableLengthBytesWritableRowKey().decodeCustomizedReversedPackedBcd(
+                new ImmutableBytesWritable(input), 0, input.length);
     }
 
     @Test
