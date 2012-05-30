@@ -112,8 +112,10 @@ public class VariableLengthBytesWritableRowKey extends RowKey {
     }
 
     public VariableLengthBytesWritableRowKey(int fixedPrefixLength) {
-        this.fixedPrefixLength = fixedPrefixLength;
+        if (fixedPrefixLength < 0)
+            throw new IllegalArgumentException("fixed prefix length can not be < 0");
 
+        this.fixedPrefixLength = fixedPrefixLength;
     }
 
     @Override
