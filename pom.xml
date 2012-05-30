@@ -15,13 +15,24 @@
     <url>http://github.com/NGDATA/orderly.git</url>
   </scm>
 
-  <repositories>
+  <distributionManagement>
     <repository>
-      <id>lilyproject</id>
-      <name>Lily Maven repository</name>
-      <url>http://lilyproject.org/maven/maven2/deploy/</url>
+      <id>org.lilyproject.maven-deploy</id>
+      <name>Lily deploy repository</name>
+      <url>scp://lilyproject.org/var/www/lilyproject.org/maven/maven2/deploy</url>
     </repository>
-  </repositories>
+    <snapshotRepository>
+      <id>org.lilyproject.maven-snapshot</id>
+      <name>Lily dev repository</name>
+      <url>scp://lilyproject.org/var/www/lilyproject.org/maven/maven2/dev</url>
+    </snapshotRepository>
+    <site>
+      <id>org.lilyproject.website</id>
+      <name>Lily maven website</name>
+      <url>scp://lilyproject.org/var/www/lilyproject.org/maven-site/${project.version}/</url>
+    </site>
+  </distributionManagement>
+
 
   <properties>
     <version.hbase>0.90.2</version.hbase>
