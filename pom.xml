@@ -9,6 +9,20 @@
   <name>Orderly</name>
   <url>https://github.com/NGDATA/orderly</url>
 
+  <scm>
+    <connection>scm:git:git://github.com/NGDATA/orderly.git</connection>
+    <developerConnection>scm:git:git://github.com/NGDATA/orderly.git</developerConnection>
+    <url>http://github.com/NGDATA/orderly.git</url>
+  </scm>
+
+  <repositories>
+    <repository>
+      <id>lilyproject</id>
+      <name>Lily Maven repository</name>
+      <url>http://lilyproject.org/maven/maven2/deploy/</url>
+    </repository>
+  </repositories>
+
   <properties>
     <version.hbase>0.90.2</version.hbase>
     <version.hadoop>0.20.2</version.hadoop>
