@@ -1,41 +1,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.gotometrics.orderly</groupId>
+  <groupId>org.clojars.monodeldiablo</groupId>
   <artifactId>orderly</artifactId>
   <version>0.12-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Orderly</name>
-  <url>https://github.com/NGDATA/orderly</url>
+  <url>https://github.com/monodeldiablo/orderly</url>
 
   <scm>
-    <connection>scm:git:git@github.com:NGDATA/orderly.git</connection>
-    <developerConnection>scm:git:git@github.com:NGDATA/orderly.git</developerConnection>
-    <url>http://github.com/NGDATA/orderly.git</url>
+    <connection>scm:git:git@github.com:monodeldiablo/orderly.git</connection>
+    <developerConnection>scm:git:git@github.com:monodeldiablo/orderly.git</developerConnection>
+    <url>http://github.com/monodeldiablo/orderly.git</url>
   </scm>
 
   <distributionManagement>
     <repository>
-      <id>org.lilyproject.maven-deploy</id>
-      <name>Lily deploy repository</name>
-      <url>scp://lilyproject.org/var/www/lilyproject.org/maven/maven2/deploy</url>
+      <id>clojars</id>
+      <name>Clojars repository</name>
+      <url>https://clojars.org/repo</url>
     </repository>
-    <snapshotRepository>
-      <id>org.lilyproject.maven-snapshot</id>
-      <name>Lily dev repository</name>
-      <url>scp://lilyproject.org/var/www/lilyproject.org/maven/maven2/dev</url>
-    </snapshotRepository>
-    <site>
-      <id>org.lilyproject.website</id>
-      <name>Lily maven website</name>
-      <url>scp://lilyproject.org/var/www/lilyproject.org/maven-site/${project.version}/</url>
-    </site>
   </distributionManagement>
 
-
   <properties>
-    <version.hbase>0.90.2</version.hbase>
-    <version.hadoop>0.20.2</version.hadoop>
+    <version.hbase>0.92.1</version.hbase>
+    <version.hadoop>1.0.3</version.hadoop>
   </properties>
 
   <dependencies>
