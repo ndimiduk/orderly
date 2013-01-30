@@ -24,6 +24,14 @@
     <url>http://github.com/ndimiduk/orderly.git</url>
   </scm>
 
+  <distributionManagement>
+    <repository>
+      <id>clojars</id>
+      <name>Clojars repository</name>
+      <url>https://clojars.org/repo</url>
+    </repository>
+  </distributionManagement>
+
   <modules>
     <module>orderly-core</module>
     <module>orderly-examples</module>
