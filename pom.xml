@@ -1,17 +1,29 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.clojars.monodeldiablo</groupId>
+  <groupId>orderly</groupId>
   <artifactId>orderly</artifactId>
   <version>0.12-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Orderly</name>
-  <url>https://github.com/monodeldiablo/orderly</url>
+  <description>Serialize a wide range of data types into an order-preserving byte encoding.</description>
+  <url>https://github.com/ndimiduk/orderly</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:monodeldiablo/orderly.git</connection>
-    <developerConnection>scm:git:git@github.com:monodeldiablo/orderly.git</developerConnection>
-    <url>http://github.com/monodeldiablo/orderly.git</url>
+    <connection>scm:git:git@github.com:ndimiduk/orderly.git</connection>
+    <developerConnection>scm:git:git@github.com:ndimiduk/orderly.git</developerConnection>
+    <url>http://github.com/ndimiduk/orderly.git</url>
   </scm>
 
   <distributionManagement>
