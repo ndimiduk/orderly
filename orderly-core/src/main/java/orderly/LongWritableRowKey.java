@@ -17,12 +17,8 @@
  */
 package orderly;
 
-import java.io.IOException;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
 
 /** Serialize and deserialize signed, two's complement long integers into a
  * variable-length sortable byte format. 

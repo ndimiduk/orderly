@@ -20,9 +20,10 @@ package orderly;
 
 import java.io.IOException;
 
-import com.google.common.primitives.UnsignedBytes;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.BytesWritable;
+
+import com.google.common.primitives.UnsignedBytes;
 
 /**
  * Serializes and deserializes BytesWritable into a sortable variable length representation with an optional fixed

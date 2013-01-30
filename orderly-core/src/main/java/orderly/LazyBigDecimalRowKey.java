@@ -19,7 +19,6 @@
 package orderly;
 
 import java.io.IOException;
-
 import java.math.BigDecimal;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;

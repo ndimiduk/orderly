@@ -20,8 +20,8 @@ package orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.LongWritable;
 
 /** Serializes and deserializes Unsigned Long objects into a variable-length
  * sortable byte aray representation.

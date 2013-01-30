@@ -20,8 +20,8 @@ package orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.FloatWritable;
 
 /** Serializes and deserializes Floats into a sortable byte aray 
  * representation.

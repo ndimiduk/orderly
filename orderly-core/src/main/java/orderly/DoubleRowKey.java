@@ -20,8 +20,8 @@ package orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
 
 /** Serializes and deserializes Doubles into a sortable byte aray 
  * representation.

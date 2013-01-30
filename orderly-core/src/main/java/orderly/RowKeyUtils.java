@@ -20,8 +20,8 @@ package orderly;
 
 import java.util.Arrays;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.Text;
 
 /** Various utility functions for creating and manipulating row keys. */
 public class RowKeyUtils 

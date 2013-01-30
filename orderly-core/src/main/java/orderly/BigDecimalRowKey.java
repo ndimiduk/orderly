@@ -252,8 +252,6 @@ public class BigDecimalRowKey extends RowKey
   public void serialize(Object o, ImmutableBytesWritable w) 
     throws IOException
   {
-    byte[] b = w.get();
-    int offset = w.getOffset();
     resetSignMask();
 
     if (o == null) {

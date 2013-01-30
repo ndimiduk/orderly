@@ -20,10 +20,8 @@ package orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.Text;
-
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.Text;
 
 /** Serialize and deserialize Hadoop Text Objects into sortable byte arrays.
  * The serialization and deserialization method are identical to 

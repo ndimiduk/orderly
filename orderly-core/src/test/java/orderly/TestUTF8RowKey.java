@@ -18,14 +18,7 @@
 
 package orderly;
 
-import java.io.IOException;
-
-import orderly.RowKey;
-import orderly.UTF8RowKey;
-
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
-
 import org.junit.Before;
 
 public class TestUTF8RowKey extends RandomRowKeyTestCase

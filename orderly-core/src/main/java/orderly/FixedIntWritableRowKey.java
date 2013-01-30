@@ -20,9 +20,9 @@ package orderly;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.IntWritable;
 
 /** Serializes and deserializes IntWritablesWritables into a sortable 
  * fixed-length byte array representation.
