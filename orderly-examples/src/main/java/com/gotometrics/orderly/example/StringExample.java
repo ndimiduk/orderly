@@ -22,6 +22,7 @@ import com.gotometrics.orderly.StringRowKey;
 import com.gotometrics.orderly.TextRowKey;
 import com.gotometrics.orderly.UTF8RowKey;
 import com.gotometrics.orderly.Order;
+import com.gotometrics.orderly.Termination;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -87,7 +88,7 @@ public class StringExample
     System.out.println("deserialize(serialize(null)) = " 
         + u.deserialize(u.serialize(null)));
 
-    u.setTermination(true);
+    u.setTermination(Termination.MUST);
     System.out.println("mustTerminate length(serialize(foobar)) = " 
         + u.serialize(Bytes.toBytes("foobar")).length);
     System.out.println("mustTerminate - deserialize(serialize(foobar)) = " 

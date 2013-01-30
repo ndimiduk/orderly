@@ -107,10 +107,8 @@ public class StructIterator implements Iterator<Object>
     return fields[fieldPos++].deserialize(w);
   }
 
-  @Override
   public boolean hasNext() { return fieldPos < fields.length; }
 
-  @Override
   public Object next() { 
     try {
       if (!hasNext())
@@ -121,6 +119,5 @@ public class StructIterator implements Iterator<Object>
     }
   }
 
-  @Override
   public void remove() { throw new UnsupportedOperationException(); }
 }

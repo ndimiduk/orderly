@@ -18,11 +18,11 @@
 
 package com.gotometrics.orderly;
 
+import static com.gotometrics.orderly.Termination.SHOULD_NOT;
+
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-
-import static com.gotometrics.orderly.Termination.SHOULD_NOT;
 
 /** Serialize and deserialize a struct (record) row key into a sortable
  * byte array. 
@@ -224,7 +224,6 @@ public class StructRowKey extends RowKey implements Iterable<Object>
    * @see #iterateOver
    * @return an iterator for w
    */
-  @Override
   public StructIterator iterator() {
     if (iterator == null)
       iterator = new StructIterator(this);
