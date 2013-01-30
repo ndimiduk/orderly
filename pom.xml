@@ -7,7 +7,7 @@
   <version>0.13.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Orderly</name>
-  <description>Serialize a wide range of data types into an order-preserving byte encoding.</description>
+  <description>Schema and type system for creating sortable byte[]</description>
   <url>https://github.com/ndimiduk/orderly</url>
 
   <licenses>
