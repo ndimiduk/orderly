@@ -1,11 +1,4 @@
-TODO: documentation needs to be updated with what is changed wrt the original Orderly library
-
-- maven build
-- support for fixed and variable length byte arrays. Fixed length "as is", variable length using a BCD encoding
-- support for explicitely disabling termination, for example useful when building rowkeys to be used for prefix searching
-- ...
-
-Orderly
+# Orderly
 
 This project serializes a wide range of simple and complex key data types into a
 sort-order preserving byte encoding. Sorting the serialized byte arrays produces
@@ -13,7 +6,16 @@ the same ordering as the natural sort order of the underlying data type.
 The project can be used to generate byte-valued serialized keys for 
 sorted key-value data stores such as HBase. 
 
-0. Design
+TODO: documentation needs to be updated with what is changed wrt the original
+Orderly library
+
+- maven build
+- support for fixed and variable length byte arrays. Fixed length "as is",
+  variable length using a BCD encoding
+- support for explicitly disabling termination, for example useful when
+  building rowkeys to be used for prefix searching
+
+## Design
 
 The goal of this project is to produce extremely space efficient byte 
 serializations for common data types while ensuring that the resulting byte
@@ -33,7 +35,7 @@ RowKeys may be a primitive (single-value) type or complex (composite) type
 composed of many values. Complex types are themselves composed of other 
 complex types and primitive types.
  
-1. Supported Primive Types
+## Supported Primive Types
 We support a wide range of primitive (single-value) types:
 
   (i) Variable-Length Integers (Int, IntWritable, Long, LongWritable)
@@ -73,7 +75,7 @@ We support a wide range of primitive (single-value) types:
    invalid UTF-8 header bytes, although in many cases they can be omitted from
    the serialization entirely (see Section 3).
 
-2. Complex (Composite) Types
+## Complex (Composite) Types
 Currently, the supported complex type is a struct (record) key, which is used to
 create a composite key. The struct key is composed a fixed number of field
 row keys (which may be any valid row key type, including another struct). 
@@ -88,7 +90,7 @@ For convenience, a StructBuilder class is provided to build struct keys more
 easily, and a StructIterator class is provided to iterate over the fields of a 
 serialized struct.
 
-3. Important Row Key Methods
+## Important Row Key Methods
 All row key types are subclasses of type RowKey, and the following methods:
   (i) get serialized length - Given an object to be serialized, returns the 
       length of the object's serialized representation (so you can allocate
@@ -99,7 +101,7 @@ All row key types are subclasses of type RowKey, and the following methods:
   (iv) skip (skipping over a serialized type in an immutablebyteswritable 
        without deserialization the object)
 
-4. Usage Guidelines
+## Usage Guidelines
    (1) Prefer Writable or byte types (IntWritable, UTF8, Text) to 
    immutable object (Integer, Long, String) types. The latter cannot be 
    re-used across multiple serialization/deserialization operations. If you have
@@ -134,7 +136,7 @@ All row key types are subclasses of type RowKey, and the following methods:
    difference in serialization overhead between ascending and descending order 
    is a single byte per serialized RowKey.
 
-5. Additional Documentation
+## Additional Documentation
 All public classes have JavaDocs, which can be built by typing 'ant javadoc'.
 Start with the JavaDoc for the RowKey class, and if you are going to use a 
 composite (complex) key, also read the JavaDoc for the StructRowKey class.
